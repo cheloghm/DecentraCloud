@@ -17,7 +17,7 @@ const RegisterForm = () => {
             setSuccess('Registration successful!');
             setError('');
         } catch (error) {
-            setError('Registration failed. Please try again.');
+            setError(error.response?.data?.message || 'Registration failed. Please try again.');
             setSuccess('');
         }
     };

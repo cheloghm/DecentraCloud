@@ -17,7 +17,7 @@ const LoginForm = () => {
             setError('');
             console.log('Token:', response.Token); // Ensure you get the token here
         } catch (error) {
-            setError('Login failed. Please try again.');
+            setError(error.response?.data?.message || 'Login failed. Please try again.');
             setSuccess('');
             console.error(error.response?.data?.message || error.message);
         }

@@ -27,7 +27,7 @@ namespace DecentraCloud.API.Controllers
                 var user = await _userService.RegisterUser(userDto);
                 return Ok(user);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
@@ -41,7 +41,7 @@ namespace DecentraCloud.API.Controllers
                 var token = await _userService.LoginUser(userDto);
                 return Ok(new { Token = token });
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 return Unauthorized(new { message = ex.Message });
             }
