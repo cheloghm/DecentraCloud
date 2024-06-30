@@ -1,12 +1,9 @@
-﻿// UserService.cs
-
-using DecentraCloud.API.DTOs;
+﻿using DecentraCloud.API.DTOs;
 using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 
@@ -56,6 +53,31 @@ namespace DecentraCloud.API.Services
         public async Task<User> GetUserById(string userId)
         {
             return await _userRepository.GetUserById(userId);
+        }
+
+        public async Task<User> UpdateUser(UserDetailsDto userDto, string userId)
+        {
+            var user = await _userRepository.GetUserById(userId);
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+
+            user.Username = userDto.Username;
+            user.Email = userDto.Email;
+            user.Settings = new UserSettings
+            {
+                ReceiveNewsletter = userDto.Settings.ReceiveNewsletter,
+                Theme = userDto.Settings.Theme
+            };
+
+            await _userRepository.UpdateUser(user);
+            return user;
+        }
+
+        public async Task<bool> DeleteUser(string userId)
+        {
+            return await _userRepository.DeleteUser(userId);
         }
     }
 }

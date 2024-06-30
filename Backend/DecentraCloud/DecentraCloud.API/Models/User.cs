@@ -17,5 +17,6 @@ namespace DecentraCloud.API.Models
 
         [BsonElement("password")]
         public string Password { get; set; }
+        public UserSettings Settings { get; set; }
     }
 }

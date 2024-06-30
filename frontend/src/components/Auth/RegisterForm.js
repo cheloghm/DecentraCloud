@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import authService from '../../services/authService';
 
-const RegisterForm = ({ onRegister }) => {
+const RegisterForm = ({ onRegister, onError }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,7 +15,8 @@ const RegisterForm = ({ onRegister }) => {
         onRegister();
       }
     } catch (error) {
-      setError(error.response.data.message);
+      setError(error.response?.data?.message || 'Registration failed. Please try again.');
+      onError(error.response?.data?.message || 'Registration failed. Please try again.');
     }
   };
 

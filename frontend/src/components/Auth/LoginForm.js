@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import authService from '../../services/authService';
 
-const LoginForm = ({ onLogin }) => {
+const LoginForm = ({ onLogin, onError }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -14,7 +14,8 @@ const LoginForm = ({ onLogin }) => {
         onLogin();
       }
     } catch (error) {
-      setError(error.response.data.message);
+      setError(error.response?.data?.message || 'Login failed. Please try again.');
+      onError(error.response?.data?.message || 'Login failed. Please try again.');
     }
   };
 

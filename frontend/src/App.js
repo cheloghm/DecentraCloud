@@ -1,5 +1,3 @@
-// src/App.js
-
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -11,6 +9,7 @@ import SystemStatus from './components/Dashboard/SystemStatus';
 import Transactions from './components/Dashboard/Transactions';
 import LoginForm from './components/Auth/LoginForm';
 import RegisterForm from './components/Auth/RegisterForm';
+import UserProfileForm from './components/UserProfileForm';
 import Modal from './components/Modal';
 import authService from './services/authService';
 
@@ -21,6 +20,7 @@ function App() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const handleLoginClick = () => setShowLoginModal(true);
   const handleRegisterClick = () => setShowRegisterModal(true);
@@ -28,6 +28,7 @@ function App() {
     setShowLoginModal(false);
     setShowRegisterModal(false);
     setShowProfileModal(false);
+    setMessage(null);
   };
 
   const fetchUserDetails = async () => {
@@ -36,20 +37,29 @@ function App() {
       setUsername(userDetails.username);
       setEmail(userDetails.email);
     } catch (error) {
+      setMessage('Failed to fetch user details');
       console.error('Failed to fetch user details:', error);
     }
   };
 
   const handleLogin = async () => {
-    setIsLoggedIn(true);
-    handleCloseModal();
-    await fetchUserDetails();
+    try {
+      setIsLoggedIn(true);
+      await fetchUserDetails();
+      handleCloseModal();
+    } catch (error) {
+      setMessage('Login failed. Please try again later.');
+    }
   };
 
   const handleRegister = async () => {
-    setIsLoggedIn(true);
-    handleCloseModal();
-    await fetchUserDetails();
+    try {
+      setIsLoggedIn(true);
+      await fetchUserDetails();
+      handleCloseModal();
+    } catch (error) {
+      setMessage('Registration failed. Please try again later.');
+    }
   };
 
   const handleLogout = () => {
@@ -58,6 +68,17 @@ function App() {
   };
 
   const handleProfileClick = () => setShowProfileModal(true);
+
+  const handleUpdateUser = async (userDetails) => {
+    try {
+      await authService.updateUser(userDetails);
+      setMessage('Profile updated successfully');
+      await fetchUserDetails();
+    } catch (error) {
+      setMessage('Failed to update profile');
+      console.error('Failed to update profile:', error);
+    }
+  };
 
   useEffect(() => {
     const user = localStorage.getItem('user');
@@ -98,20 +119,30 @@ function App() {
       )}
       {showLoginModal && (
         <Modal onClose={handleCloseModal}>
-          <LoginForm onLogin={handleLogin} />
+          <LoginForm onLogin={handleLogin} onError={setMessage} />
         </Modal>
       )}
       {showRegisterModal && (
         <Modal onClose={handleCloseModal}>
-          <RegisterForm onRegister={handleRegister} />
+          <RegisterForm onRegister={handleRegister} onError={setMessage} />
         </Modal>
       )}
       {showProfileModal && (
         <Modal onClose={handleCloseModal}>
+          <UserProfileForm
+            username={username}
+            email={email}
+            onUpdateUser={handleUpdateUser}
+            onError={setMessage}
+          />
+        </Modal>
+      )}
+      {message && (
+        <Modal onClose={handleCloseModal}>
           <div>
-            <h2>Profile</h2>
-            <p><strong>Username:</strong> {username}</p>
-            <p><strong>Email:</strong> {email}</p>
+            <h2>Message</h2>
+            <p>{message}</p>
+            <button onClick={handleCloseModal}>Close</button>
           </div>
         </Modal>
       )}
