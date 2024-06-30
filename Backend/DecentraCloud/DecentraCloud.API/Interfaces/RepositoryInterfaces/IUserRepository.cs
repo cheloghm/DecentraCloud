@@ -7,5 +7,6 @@ namespace DecentraCloud.API.Interfaces.RepositoryInterfaces
     {
         Task<User> RegisterUser(User user);
         Task<User> GetUserByEmail(string email);
+        Task<User> GetUserById(string userId);
     }
 }

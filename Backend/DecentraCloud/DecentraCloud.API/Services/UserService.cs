@@ -1,16 +1,13 @@
-﻿// Services/UserService.cs
+﻿// UserService.cs
 
 using DecentraCloud.API.DTOs;
+using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -18,12 +15,12 @@ namespace DecentraCloud.API.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IConfiguration _configuration;
+        private readonly TokenHelper _tokenHelper;
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration)
+        public UserService(IUserRepository userRepository, TokenHelper tokenHelper)
         {
             _userRepository = userRepository;
-            _configuration = configuration;
+            _tokenHelper = tokenHelper;
         }
 
         public async Task<User> RegisterUser(UserRegistrationDto userDto)
@@ -41,10 +38,11 @@ namespace DecentraCloud.API.Services
                 Password = BCrypt.Net.BCrypt.HashPassword(userDto.Password)
             };
 
-            return await _userRepository.RegisterUser(user);
+            await _userRepository.RegisterUser(user);
+            return user;
         }
 
-        public async Task<string> LoginUser(UserLoginDto userDto)
+        public async Task<User> AuthenticateUser(UserLoginDto userDto)
         {
             var user = await _userRepository.GetUserByEmail(userDto.Email);
             if (user == null || !BCrypt.Net.BCrypt.Verify(userDto.Password, user.Password))
@@ -52,20 +50,12 @@ namespace DecentraCloud.API.Services
                 throw new Exception("Invalid email or password");
             }
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email)
-                }),
-                Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            return user;
+        }
+
+        public async Task<User> GetUserById(string userId)
+        {
+            return await _userRepository.GetUserById(userId);
         }
     }
 }

@@ -2,48 +2,37 @@
 
 import axios from 'axios';
 
-const API_URL = 'https://localhost:7240/api/Auth'; // Ensure the path matches exactly, including case sensitivity
+const apiUrl = 'https://localhost:7240/api'; // Adjust the URL as needed
 
-axios.interceptors.request.use(
-    config => {
-        const token = localStorage.getItem('jwtToken');
-        if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
-        }
-        return config;
-    },
-    error => {
-        Promise.reject(error)
-    }
-);
-
-const register = async (username, email, password) => {
-    try {
-        const response = await axios.post(`${API_URL}/register`, {
-            username,
-            email,
-            password
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Registration Error:', error.response?.data || error.message);
-        throw error;
-    }
+const login = async (credentials) => {
+  const response = await axios.post(`${apiUrl}/Auth/login`, credentials);
+  localStorage.setItem('user', JSON.stringify(response.data));
+  return response.data;
 };
 
-const login = async (email, password) => {
-    try {
-        const response = await axios.post(`${API_URL}/login`, {
-            email,
-            password
-        });
-        const token = response.data.Token;
-        // Store the token in local storage
-        localStorage.setItem('jwtToken', token);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+const register = async (userDetails) => {
+  const response = await axios.post(`${apiUrl}/Auth/register`, userDetails);
+  localStorage.setItem('user', JSON.stringify(response.data));
+  return response.data;
 };
 
-export { register, login };
+const logout = () => {
+  localStorage.removeItem('user');
+};
+
+const getUserDetails = async () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = user?.token;
+  if (!token) throw new Error("User not authenticated");
+  const response = await axios.get(`${apiUrl}/Auth/me`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data;
+};
+
+export default {
+  login,
+  register,
+  logout,
+  getUserDetails,
+};

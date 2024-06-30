@@ -7,6 +7,7 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
     public interface IUserService
     {
         Task<User> RegisterUser(UserRegistrationDto userDto);
-        Task<string> LoginUser(UserLoginDto userDto);
+        Task<User> AuthenticateUser(UserLoginDto userDto);
+        Task<User> GetUserById(string userId);
     }
 }

@@ -1,50 +1,87 @@
-﻿// Controllers/AuthController.cs
+﻿// AuthController.cs
 
-using DecentraCloud.API.DTOs;
-using DecentraCloud.API.Interfaces;
-using DecentraCloud.API.Interfaces.ServiceInterfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using DecentraCloud.API.DTOs;
+using DecentraCloud.API.Interfaces.ServiceInterfaces;
+using DecentraCloud.API.Helpers;
+using System.Security.Claims;
 
 namespace DecentraCloud.API.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class AuthController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly TokenHelper _tokenHelper;
 
-        public AuthController(IUserService userService)
+        public AuthController(IUserService userService, TokenHelper tokenHelper)
         {
             _userService = userService;
+            _tokenHelper = tokenHelper;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(UserRegistrationDto userDto)
+        public async Task<IActionResult> Register([FromBody] UserRegistrationDto userRegisterDTO)
         {
             try
             {
-                var user = await _userService.RegisterUser(userDto);
-                return Ok(user);
+                var user = await _userService.RegisterUser(userRegisterDTO);
+
+                if (user == null)
+                {
+                    return BadRequest(new { message = "User already exists." });
+                }
+
+                var token = _tokenHelper.GenerateJwtToken(user);
+
+                return Ok(new { token });
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(UserLoginDto userDto)
+        public async Task<IActionResult> Login([FromBody] UserLoginDto userLoginDTO)
         {
             try
             {
-                var token = await _userService.LoginUser(userDto);
-                return Ok(new { Token = token });
+                var user = await _userService.AuthenticateUser(userLoginDTO);
+
+                if (user == null)
+                {
+                    return Unauthorized(new { message = "Invalid credentials." });
+                }
+
+                var token = _tokenHelper.GenerateJwtToken(user);
+
+                return Ok(new { token });
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 return Unauthorized(new { message = ex.Message });
             }
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetUserDetails()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userService.GetUserById(userId);
+            if (user == null) return NotFound();
+
+            var userDetailsDto = new UserDetailsDto
+            {
+                Username = user.Username,
+                Email = user.Email
+            };
+
+            return Ok(userDetailsDto);
         }
     }
 }

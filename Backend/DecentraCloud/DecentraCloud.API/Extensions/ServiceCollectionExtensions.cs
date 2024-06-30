@@ -1,4 +1,5 @@
-﻿using DecentraCloud.API.Interfaces.RepositoryInterfaces;
+﻿using DecentraCloud.API.Helpers;
+using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Repositories;
 using DecentraCloud.API.Services;
@@ -12,6 +13,7 @@ namespace DecentraCloud.API.Extensions
             // Add all the services and repositories to the dependency injection container
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddSingleton<TokenHelper>(); // Add TokenHelper to DI
 
             return services;
         }
