@@ -15,8 +15,9 @@ const RegisterForm = ({ onRegister, onError }) => {
         onRegister();
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Registration failed. Please try again.');
-      onError(error.response?.data?.message || 'Registration failed. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      setError(errorMessage);
+      onError(errorMessage);
     }
   };
 

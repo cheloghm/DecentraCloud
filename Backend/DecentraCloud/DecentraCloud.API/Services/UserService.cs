@@ -32,7 +32,12 @@ namespace DecentraCloud.API.Services
             {
                 Username = userDto.Username,
                 Email = userDto.Email,
-                Password = BCrypt.Net.BCrypt.HashPassword(userDto.Password)
+                Password = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
+                Settings = new UserSettings // Initialize settings with default values
+                {
+                    ReceiveNewsletter = false,
+                    Theme = "light"
+                }
             };
 
             await _userRepository.RegisterUser(user);

@@ -14,8 +14,9 @@ const LoginForm = ({ onLogin, onError }) => {
         onLogin();
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Login failed. Please try again.');
-      onError(error.response?.data?.message || 'Login failed. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      setError(errorMessage);
+      onError(errorMessage);
     }
   };
 

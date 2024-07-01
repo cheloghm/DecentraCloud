@@ -1,5 +1,4 @@
 // src/components/Header.js
-
 import React from 'react';
 
 const Header = ({ onLoginClick, onRegisterClick, isLoggedIn, onLogoutClick, username, onProfileClick }) => {
@@ -12,9 +11,9 @@ const Header = ({ onLoginClick, onRegisterClick, isLoggedIn, onLogoutClick, user
         <a href="#" style={styles.link}>Contact Us</a>
         {isLoggedIn ? (
           <>
+            <a href="#" style={styles.link} onClick={onProfileClick}>{username || 'No Name'}</a>
             <a href="#" style={styles.link}>Dashboard</a>
             <a href="#" style={styles.link}>Settings</a>
-            <a href="#" style={styles.link} onClick={onProfileClick}><h3>{username}</h3></a>
             <button style={styles.button} onClick={onLogoutClick}>Logout</button>
           </>
         ) : (

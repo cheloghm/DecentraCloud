@@ -75,12 +75,16 @@ namespace DecentraCloud.API.Controllers
 
             var userDetailsDto = new UserDetailsDto
             {
-                Username = user.Username,
+                Username = user.Username ?? "No Name", // Default to "No Name" if null
                 Email = user.Email,
-                Settings = new UserSettingsDto
+                Settings = user.Settings != null ? new UserSettingsDto
                 {
                     ReceiveNewsletter = user.Settings.ReceiveNewsletter,
                     Theme = user.Settings.Theme
+                } : new UserSettingsDto
+                {
+                    ReceiveNewsletter = false, // Default value
+                    Theme = "light" // Default value
                 }
             };
 

@@ -17,9 +17,9 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [message, setMessage] = useState(null);
 
   const handleLoginClick = () => setShowLoginModal(true);
@@ -37,7 +37,11 @@ function App() {
       setUsername(userDetails.username);
       setEmail(userDetails.email);
     } catch (error) {
-      setMessage('Failed to fetch user details');
+      if (error.response) {
+        setMessage('Failed to fetch user details');
+      } else {
+        setMessage('Network failure. Please try again later.');
+      }
       console.error('Failed to fetch user details:', error);
     }
   };
@@ -48,7 +52,11 @@ function App() {
       await fetchUserDetails();
       handleCloseModal();
     } catch (error) {
-      setMessage('Login failed. Please try again later.');
+      if (error.response) {
+        setMessage('Login failed. Please try again later.');
+      } else {
+        setMessage('Network failure. Please try again later.');
+      }
     }
   };
 
@@ -58,13 +66,18 @@ function App() {
       await fetchUserDetails();
       handleCloseModal();
     } catch (error) {
-      setMessage('Registration failed. Please try again later.');
+      if (error.response) {
+        setMessage('Registration failed. Please try again later.');
+      } else {
+        setMessage('Network failure. Please try again later.');
+      }
     }
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('user');
+    //setMessage('Logged out successfully.');
   };
 
   const handleProfileClick = () => setShowProfileModal(true);
@@ -75,8 +88,27 @@ function App() {
       setMessage('Profile updated successfully');
       await fetchUserDetails();
     } catch (error) {
-      setMessage('Failed to update profile');
+      if (error.response) {
+        setMessage('Failed to update profile');
+      } else {
+        setMessage('Network failure. Please try again later.');
+      }
       console.error('Failed to update profile:', error);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      await authService.deleteUser();
+      handleLogout();
+      handleCloseModal(); // Ensure modal closes after deletion
+    } catch (error) {
+      if (error.response) {
+        setMessage('Failed to delete user');
+      } else {
+        setMessage('Network failure. Please try again later.');
+      }
+      console.error('Failed to delete user:', error);
     }
   };
 
@@ -133,6 +165,7 @@ function App() {
             username={username}
             email={email}
             onUpdateUser={handleUpdateUser}
+            onDelete={handleDeleteUser}
             onError={setMessage}
           />
         </Modal>
@@ -141,7 +174,7 @@ function App() {
         <Modal onClose={handleCloseModal}>
           <div>
             <h2>Message</h2>
-            <p>{message}</p>
+            <p style={{ color: message.includes('success') ? 'green' : 'red' }}>{message}</p>
             <button onClick={handleCloseModal}>Close</button>
           </div>
         </Modal>
