@@ -1,14 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const storageService = require('../services/storageService');
-const mime = require('mime-types');
 
 // Upload a file
 router.post('/upload', (req, res) => {
   const { filename, data } = req.body;
 
   try {
-    storageService.saveFile(filename, Buffer.from(data, 'base64'));
+    storageService.saveFile(filename, Buffer.from(data, 'utf8'));
     res.status(200).send('File uploaded successfully');
   } catch (error) {
     res.status(400).send(error.message);
@@ -39,10 +38,6 @@ router.get('/view/:filename', (req, res) => {
 
   try {
     const fileContent = storageService.getFile(filename);
-    const mimeType = mime.lookup(filename);
-
-    // Set appropriate content type based on the file extension
-    res.setHeader('Content-Type', mimeType || 'application/octet-stream');
     res.status(200).send(fileContent);
   } catch (error) {
     res.status(400).send(error.message);
@@ -55,11 +50,11 @@ router.get('/download/:filename', (req, res) => {
 
   try {
     const filePath = storageService.getFilePath(filename);
-    const mimeType = mime.lookup(filename);
-
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Type', mimeType || 'application/octet-stream');
-    res.sendFile(filePath);
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.sendFile(filePath, () => {
+      // Delete the temp file after sending it
+      fs.unlinkSync(filePath);
+    });
   } catch (error) {
     res.status(400).send(error.message);
   }
