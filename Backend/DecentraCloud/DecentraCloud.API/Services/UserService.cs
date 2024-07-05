@@ -1,6 +1,5 @@
 ﻿using DecentraCloud.API.DTOs;
 using DecentraCloud.API.Helpers;
-using DecentraCloud.API.Interfaces;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
@@ -41,6 +40,11 @@ namespace DecentraCloud.API.Services
             };
 
             await _userRepository.RegisterUser(user);
+
+            // Generate token for the user
+            var token = _tokenHelper.GenerateJwtToken(user);
+            user.Token = token;
+
             return user;
         }
 

@@ -78,11 +78,7 @@ const getFile = (filename) => {
 const getFilePath = (filename) => {
   const filePath = path.join(STORAGE_DIR, filename);
   if (fs.existsSync(filePath)) {
-    const encryptedData = fs.readFileSync(filePath, 'utf8');
-    const decryptedData = decrypt(encryptedData);
-    const tempFilePath = path.join(STORAGE_DIR, `temp_${filename}`);
-    fs.writeFileSync(tempFilePath, decryptedData);
-    return tempFilePath;
+    return filePath;
   } else {
     throw new Error('File not found');
   }

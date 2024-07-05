@@ -7,7 +7,7 @@ router.post('/upload', (req, res) => {
   const { filename, data } = req.body;
 
   try {
-    storageService.saveFile(filename, Buffer.from(data, 'utf8'));
+    storageService.saveFile(filename, data);
     res.status(200).send('File uploaded successfully');
   } catch (error) {
     res.status(400).send(error.message);
@@ -49,12 +49,9 @@ router.get('/download/:filename', (req, res) => {
   const { filename } = req.params;
 
   try {
-    const filePath = storageService.getFilePath(filename);
+    const fileContent = storageService.getFile(filename);
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-    res.sendFile(filePath, () => {
-      // Delete the temp file after sending it
-      fs.unlinkSync(filePath);
-    });
+    res.send(fileContent);
   } catch (error) {
     res.status(400).send(error.message);
   }

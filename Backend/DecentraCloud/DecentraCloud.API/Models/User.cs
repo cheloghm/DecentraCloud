@@ -1,9 +1,10 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
+using DecentraCloud.API.Interfaces;
 
 namespace DecentraCloud.API.Models
 {
-    public class User
+    public class User : IEntityWithId
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
@@ -18,5 +19,6 @@ namespace DecentraCloud.API.Models
         [BsonElement("password")]
         public string Password { get; set; }
         public UserSettings Settings { get; set; }
+        public string Token { get; set; }
     }
 }

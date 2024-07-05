@@ -1,14 +1,9 @@
-// Program.cs
-
 using DecentraCloud.API.Config;
 using DecentraCloud.API.Data;
 using DecentraCloud.API.Extensions;
-using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Mappers;
 using DecentraCloud.API.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
@@ -118,6 +113,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseMiddleware<NodeAuthenticationMiddleware>(builder.Configuration["Jwt:Key"]);
 
 app.UseHttpsRedirection();
 
