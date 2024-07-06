@@ -18,5 +18,9 @@ namespace DecentraCloud.API.Data
         {
             get { return _database.GetCollection<User>("Users"); }
         }
+        public IMongoCollection<Node> Nodes
+        {
+            get { return _database.GetCollection<Node>("Nodes"); }
+        }
     }
 }

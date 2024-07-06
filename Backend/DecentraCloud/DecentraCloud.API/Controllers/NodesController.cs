@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using DecentraCloud.API.DTOs;
-using DecentraCloud.API.Models;
+﻿using DecentraCloud.API.DTOs;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
-using Microsoft.AspNetCore.Authorization;
+using DecentraCloud.API.Models;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Controllers
@@ -28,21 +27,12 @@ namespace DecentraCloud.API.Controllers
                 return BadRequest(new { message = "Node registration failed." });
             }
 
-            return Ok(new { node.Id, node.Token });
+            return Ok(node);
         }
 
         [HttpPost("status")]
-        [Authorize]
         public async Task<IActionResult> UpdateNodeStatus([FromBody] NodeStatusDto nodeStatusDto)
         {
-            // Only allow the node itself to update its status
-            var nodeId = HttpContext.Items["Node"]?.ToString();
-
-            if (nodeId != nodeStatusDto.NodeId)
-            {
-                return Unauthorized(new { message = "You are not authorized to update this node's status." });
-            }
-
             var result = await _nodeService.UpdateNodeStatus(nodeStatusDto);
 
             if (!result)
@@ -51,6 +41,13 @@ namespace DecentraCloud.API.Controllers
             }
 
             return Ok(new { message = "Node status updated successfully." });
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllNodes()
+        {
+            var nodes = await _nodeService.GetAllNodes();
+            return Ok(nodes);
         }
     }
 }

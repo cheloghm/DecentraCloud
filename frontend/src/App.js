@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Overview from './components/Dashboard/Overview';
@@ -12,6 +13,7 @@ import RegisterForm from './components/Auth/RegisterForm';
 import UserProfileForm from './components/UserProfileForm';
 import Modal from './components/Modal';
 import authService from './services/authService';
+import NodeManagement from './components/Dashboard/NodeManagement';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -77,7 +79,6 @@ function App() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('user');
-    //setMessage('Logged out successfully.');
   };
 
   const handleProfileClick = () => setShowProfileModal(true);
@@ -121,65 +122,71 @@ function App() {
   }, []);
 
   return (
-    <div>
-      <Header
-        onLoginClick={handleLoginClick}
-        onRegisterClick={handleRegisterClick}
-        isLoggedIn={isLoggedIn}
-        onLogoutClick={handleLogout}
-        username={username}
-        onProfileClick={handleProfileClick}
-      />
-      {isLoggedIn ? (
-        <div style={styles.container}>
-          <Sidebar />
-          <main style={styles.main}>
-            <Overview />
-            <StorageUsage />
-            <Earnings />
-            <Expenditures />
-            <SystemStatus />
-            <Transactions />
-          </main>
-        </div>
-      ) : (
-        <div style={styles.welcomeContainer}>
-          <h1>DecentraCloud</h1>
-          <button style={styles.button} onClick={handleLoginClick}>Login</button>
-          <button style={styles.button} onClick={handleRegisterClick}>Register</button>
-        </div>
-      )}
-      {showLoginModal && (
-        <Modal onClose={handleCloseModal}>
-          <LoginForm onLogin={handleLogin} onError={setMessage} />
-        </Modal>
-      )}
-      {showRegisterModal && (
-        <Modal onClose={handleCloseModal}>
-          <RegisterForm onRegister={handleRegister} onError={setMessage} />
-        </Modal>
-      )}
-      {showProfileModal && (
-        <Modal onClose={handleCloseModal}>
-          <UserProfileForm
-            username={username}
-            email={email}
-            onUpdateUser={handleUpdateUser}
-            onDelete={handleDeleteUser}
-            onError={setMessage}
-          />
-        </Modal>
-      )}
-      {message && (
-        <Modal onClose={handleCloseModal}>
-          <div>
-            <h2>Message</h2>
-            <p style={{ color: message.includes('success') ? 'green' : 'red' }}>{message}</p>
-            <button onClick={handleCloseModal}>Close</button>
+    <Router>
+      <div>
+        <Header
+          onLoginClick={handleLoginClick}
+          onRegisterClick={handleRegisterClick}
+          isLoggedIn={isLoggedIn}
+          onLogoutClick={handleLogout}
+          username={username}
+          onProfileClick={handleProfileClick}
+        />
+        {isLoggedIn ? (
+          <div style={styles.container}>
+            <Sidebar />
+            <main style={styles.main}>
+              <Routes>
+                <Route path="/dashboard/overview" element={<Overview />} />
+                <Route path="/dashboard/storage-usage" element={<StorageUsage />} />
+                <Route path="/dashboard/earnings" element={<Earnings />} />
+                <Route path="/dashboard/expenditures" element={<Expenditures />} />
+                <Route path="/dashboard/system-status" element={<SystemStatus />} />
+                <Route path="/dashboard/transactions" element={<Transactions />} />
+                <Route path="/dashboard/node-management" element={<NodeManagement />} />
+                <Route path="/" element={<Overview />} />
+              </Routes>
+            </main>
           </div>
-        </Modal>
-      )}
-    </div>
+        ) : (
+          <div style={styles.welcomeContainer}>
+            <h1>DecentraCloud</h1>
+            <button style={styles.button} onClick={handleLoginClick}>Login</button>
+            <button style={styles.button} onClick={handleRegisterClick}>Register</button>
+          </div>
+        )}
+        {showLoginModal && (
+          <Modal onClose={handleCloseModal}>
+            <LoginForm onLogin={handleLogin} onError={setMessage} />
+          </Modal>
+        )}
+        {showRegisterModal && (
+          <Modal onClose={handleCloseModal}>
+            <RegisterForm onRegister={handleRegister} onError={setMessage} />
+          </Modal>
+        )}
+        {showProfileModal && (
+          <Modal onClose={handleCloseModal}>
+            <UserProfileForm
+              username={username}
+              email={email}
+              onUpdateUser={handleUpdateUser}
+              onDelete={handleDeleteUser}
+              onError={setMessage}
+            />
+          </Modal>
+        )}
+        {message && (
+          <Modal onClose={handleCloseModal}>
+            <div>
+              <h2>Message</h2>
+              <p style={{ color: message.includes('success') ? 'green' : 'red' }}>{message}</p>
+              <button onClick={handleCloseModal}>Close</button>
+            </div>
+          </Modal>
+        )}
+      </div>
+    </Router>
   );
 }
 

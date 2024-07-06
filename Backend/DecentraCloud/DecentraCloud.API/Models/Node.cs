@@ -30,6 +30,7 @@ namespace DecentraCloud.API.Models
         [BsonElement("causeOfDowntime")]
         public string CauseOfDowntime { get; set; }
         public string Token { get; set; }
+        public string Endpoint { get; set; }
     }
 
 }

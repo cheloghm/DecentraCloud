@@ -47,26 +47,31 @@ const decrypt = (text) => {
   return decrypted;
 };
 
-const saveFile = (filename, data) => {
+const saveFile = (userId, filename, data) => {
   const { availableStorage } = getStorageStats();
   if (Buffer.byteLength(data, 'utf8') > availableStorage) {
     throw new Error('Not enough storage space available');
   }
 
+  const userDir = path.join(STORAGE_DIR, userId);
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir);
+  }
+
   const encryptedData = encrypt(Buffer.from(data, 'utf8'));
-  const filePath = path.join(STORAGE_DIR, filename);
+  const filePath = path.join(userDir, filename);
   fs.writeFileSync(filePath, encryptedData, 'utf8');
 };
 
-const deleteFile = (filename) => {
-  const filePath = path.join(STORAGE_DIR, filename);
+const deleteFile = (userId, filename) => {
+  const filePath = path.join(STORAGE_DIR, userId, filename);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
   }
 };
 
-const getFile = (filename) => {
-  const filePath = path.join(STORAGE_DIR, filename);
+const getFile = (userId, filename) => {
+  const filePath = path.join(STORAGE_DIR, userId, filename);
   if (fs.existsSync(filePath)) {
     const encryptedData = fs.readFileSync(filePath, 'utf8');
     return decrypt(encryptedData).toString('utf8');
@@ -75,8 +80,8 @@ const getFile = (filename) => {
   }
 };
 
-const getFilePath = (filename) => {
-  const filePath = path.join(STORAGE_DIR, filename);
+const getFilePath = (userId, filename) => {
+  const filePath = path.join(STORAGE_DIR, userId, filename);
   if (fs.existsSync(filePath)) {
     return filePath;
   } else {
@@ -84,10 +89,33 @@ const getFilePath = (filename) => {
   }
 };
 
+const searchData = (userId, query) => {
+  const userDir = path.join(STORAGE_DIR, userId);
+  const results = [];
+
+  if (fs.existsSync(userDir)) {
+    const files = fs.readdirSync(userDir);
+    files.forEach(file => {
+      const filePath = path.join(userDir, file);
+      const data = fs.readFileSync(filePath, 'utf8');
+
+      if (data.includes(query)) {
+        results.push({
+          filename: file,
+          snippet: data.substring(0, 100) // Include a snippet of the data
+        });
+      }
+    });
+  }
+
+  return results;
+};
+
 module.exports = {
   getStorageStats,
   saveFile,
   deleteFile,
   getFile,
-  getFilePath
+  getFilePath,
+  searchData
 };
