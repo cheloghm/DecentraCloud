@@ -1,44 +1,27 @@
 // src/components/Sidebar.js
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Sidebar = () => {
   return (
-    <aside style={styles.sidebar}>
-      <ul style={styles.ul}>
-        <li style={styles.li}><a style={styles.a} href="#overview">Overview</a></li>
-        <li style={styles.li}><a style={styles.a} href="#storage">Storage</a></li>
-        <li style={styles.li}><a style={styles.a} href="#earnings">Earnings</a></li>
-        <li style={styles.li}><a style={styles.a} href="#expenditures">Expenditures</a></li>
-        <li style={styles.li}><a style={styles.a} href="#system-status">System Status</a></li>
-        <li style={styles.li}><a style={styles.a} href="#transactions">Transactions</a></li>
-      </ul>
-    </aside>
+    <div>
+      <nav>
+        <ul>
+          <li><Link to="/dashboard/overview">Overview</Link></li>
+          <li><Link to="/dashboard/storage-usage">Storage</Link></li>
+          <li><Link to="/dashboard/earnings">Earnings</Link></li>
+          <li><Link to="/dashboard/expenditures">Expenditures</Link></li>
+          <li><Link to="/dashboard/system-status">System Status</Link></li>
+          <li><Link to="/dashboard/transactions">Transactions</Link></li>
+          <li><Link to="/dashboard/node-management">Node Management</Link></li>
+          <li><Link to="/dashboard/upload">Upload File</Link></li>
+          <li><Link to="/dashboard/view-download">View/Download File</Link></li>
+          <li><Link to="/dashboard/delete">Delete File</Link></li>
+          <li><Link to="/dashboard/search">Search Files</Link></li>
+        </ul>
+      </nav>
+    </div>
   );
-};
-
-const styles = {
-  sidebar: {
-    width: '200px',
-    backgroundColor: '#f4f4f4',
-    padding: '10px',
-    height: '100vh',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    overflowY: 'auto',
-  },
-  ul: {
-    listStyleType: 'none',
-    padding: 0,
-  },
-  li: {
-    marginBottom: '10px',
-  },
-  a: {
-    textDecoration: 'none',
-    color: 'black',
-  },
 };
 
 export default Sidebar;
