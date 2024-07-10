@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
@@ -15,10 +14,7 @@ import UserProfileForm from './components/UserProfileForm';
 import Modal from './components/Modal';
 import authService from './services/authService';
 import NodeManagement from './components/Dashboard/NodeManagement';
-import FileUpload from './components/Dashboard/FileUpload';
-import FileViewDownload from './components/Dashboard/FileViewDownload';
-import FileDelete from './components/Dashboard/FileDelete';
-import FileSearch from './components/Dashboard/FileSearch';
+import FilesDashboard from './components/Dashboard/FilesDashboard';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -149,10 +145,7 @@ function App() {
                 <Route path="/dashboard/system-status" element={<SystemStatus />} />
                 <Route path="/dashboard/transactions" element={<Transactions />} />
                 <Route path="/dashboard/node-management" element={<NodeManagement />} />
-                <Route path="/dashboard/upload" element={<FileUpload />} />
-                <Route path="/dashboard/view-download" element={<FileViewDownload />} />
-                <Route path="/dashboard/delete" element={<FileDelete />} />
-                <Route path="/dashboard/search" element={<FileSearch />} />
+                <Route path="/dashboard/files" element={<FilesDashboard />} />
                 <Route path="/" element={<Overview />} />
               </Routes>
             </main>

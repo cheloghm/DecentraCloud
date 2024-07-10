@@ -1,15 +1,13 @@
 // src/components/Dashboard/NodeManagement.js
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Bar, Line } from 'react-chartjs-2';
 
 const NodeManagement = () => {
   const [nodes, setNodes] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [formData, setFormData] = useState({
     storage: '',
-    // Add other properties
+    // Add other properties if needed
   });
 
   useEffect(() => {
@@ -18,10 +16,14 @@ const NodeManagement = () => {
       const token = user?.token;
       if (!token) return;
 
-      const response = await axios.get(`http://localhost:5000/api/NodeManagement/${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setNodes(response.data);
+      try {
+        const response = await axios.get(`http://localhost:5000/api/NodeManagement/nodes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setNodes(response.data);
+      } catch (error) {
+        console.error('Failed to fetch nodes:', error);
+      }
     };
 
     fetchNodes();
@@ -31,7 +33,7 @@ const NodeManagement = () => {
     setSelectedNode(node);
     setFormData({
       storage: node.storage,
-      // Add other properties
+      // Add other properties if needed
     });
   };
 
@@ -46,11 +48,15 @@ const NodeManagement = () => {
     const token = user?.token;
     if (!token) return;
 
-    await axios.put(`http://localhost:5000/api/NodeManagement/${selectedNode.id}`, formData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      await axios.put(`http://localhost:5000/api/NodeManagement/node`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    alert('Node updated successfully');
+      alert('Node updated successfully');
+    } catch (error) {
+      console.error('Failed to update node:', error);
+    }
   };
 
   const handleDeleteNode = async (nodeId) => {
@@ -58,11 +64,15 @@ const NodeManagement = () => {
     const token = user?.token;
     if (!token) return;
 
-    await axios.delete(`http://localhost:5000/api/NodeManagement/${nodeId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      await axios.delete(`http://localhost:5000/api/NodeManagement/node/${nodeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    setNodes(nodes.filter((node) => node.id !== nodeId));
+      setNodes(nodes.filter((node) => node.id !== nodeId));
+    } catch (error) {
+      console.error('Failed to delete node:', error);
+    }
   };
 
   return (
@@ -89,14 +99,10 @@ const NodeManagement = () => {
               onChange={handleInputChange}
             />
           </div>
-          {/* Add other input fields */}
+          {/* Add other input fields if needed */}
           <button type="submit">Update Node</button>
         </form>
       )}
-      <div>
-        <h2>Node Performance Metrics</h2>
-        {/* Add charts and graphs here */}
-      </div>
     </div>
   );
 };

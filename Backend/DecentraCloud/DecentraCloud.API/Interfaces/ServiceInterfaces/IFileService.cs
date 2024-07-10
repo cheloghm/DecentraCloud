@@ -1,4 +1,6 @@
 ﻿using DecentraCloud.API.DTOs;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Interfaces.ServiceInterfaces
 {
@@ -9,5 +11,6 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
         Task<FileContentDto> ViewFile(FileOperationDto fileOperationDto);
         Task<FileContentDto> DownloadFile(FileOperationDto fileOperationDto);
         Task<IEnumerable<FileSearchResultDto>> SearchFiles(FileSearchDto fileSearchDto);
+        Task<FileOperationResult> RenameFile(FileRenameDto fileRenameDto);
     }
 }

@@ -1,4 +1,5 @@
-﻿using DecentraCloud.API.Interfaces.RepositoryInterfaces;
+﻿using DecentraCloud.API.Data;
+using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Models;
 using MongoDB.Driver;
 using System.Threading.Tasks;
@@ -9,9 +10,9 @@ namespace DecentraCloud.API.Repositories
     {
         private readonly IMongoCollection<User> _users;
 
-        public UserRepository(IMongoDatabase database)
+        public UserRepository(DecentraCloudContext context)
         {
-            _users = database.GetCollection<User>("Users");
+            _users = context.Users;
         }
 
         public async Task<User> GetUserByEmail(string email)
@@ -39,6 +40,13 @@ namespace DecentraCloud.API.Repositories
         {
             var result = await _users.DeleteOneAsync(user => user.Id == userId);
             return result.DeletedCount > 0;
+        }
+
+        public async Task UpdateUserStorageUsage(string userId, long storageUsed)
+        {
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+            var update = Builders<User>.Update.Inc(u => u.UsedStorage, storageUsed);
+            await _users.UpdateOneAsync(filter, update);
         }
     }
 }

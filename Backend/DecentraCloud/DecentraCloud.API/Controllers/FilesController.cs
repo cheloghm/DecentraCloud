@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using DecentraCloud.API.DTOs;
+﻿using DecentraCloud.API.DTOs;
+using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
-using System.Threading.Tasks;
+using DecentraCloud.API.Models;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DecentraCloud.API.Controllers
 {
@@ -10,16 +12,16 @@ namespace DecentraCloud.API.Controllers
     public class FileController : ControllerBase
     {
         private readonly IFileService _fileService;
-        private readonly INodeService _nodeService;
+        private readonly IFileRepository _fileRepository;
 
-        public FileController(IFileService fileService, INodeService nodeService)
+        public FileController(IFileService fileService, IFileRepository fileRepository)
         {
             _fileService = fileService;
-            _nodeService = nodeService;
+            _fileRepository = fileRepository;
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile([FromBody] FileUploadDto fileUploadDto)
+        public async Task<IActionResult> UploadFile([FromForm] FileUploadDto fileUploadDto)
         {
             var result = await _fileService.UploadFile(fileUploadDto);
 
@@ -34,20 +36,35 @@ namespace DecentraCloud.API.Controllers
         [HttpDelete("delete")]
         public async Task<IActionResult> DeleteFile([FromBody] FileOperationDto fileOperationDto)
         {
+            var fileRecord = await _fileRepository.GetFileRecord(fileOperationDto.UserId, fileOperationDto.Filename);
+            if (fileRecord == null)
+            {
+                return NotFound();
+            }
+
+            fileOperationDto.NodeId = fileRecord.NodeId;
             var result = await _fileService.DeleteFile(fileOperationDto);
 
             if (result.Success)
             {
+                await _fileRepository.DeleteFileRecord(fileOperationDto.UserId, fileOperationDto.Filename);
                 return Ok(result);
             }
 
             return BadRequest(result);
         }
 
-        [HttpGet("view")]
-        public async Task<IActionResult> ViewFile([FromQuery] FileOperationDto fileOperationDto)
+        [HttpGet("view/{filename}")]
+        public async Task<IActionResult> ViewFile(string filename)
         {
-            var result = await _fileService.ViewFile(fileOperationDto);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var fileRecord = await _fileRepository.GetFileRecord(userId, filename);
+            if (fileRecord == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _fileService.ViewFile(new FileOperationDto { UserId = userId, Filename = filename, NodeId = fileRecord.NodeId });
 
             if (result != null)
             {
@@ -57,24 +74,60 @@ namespace DecentraCloud.API.Controllers
             return NotFound();
         }
 
-        [HttpGet("download")]
-        public async Task<IActionResult> DownloadFile([FromQuery] FileOperationDto fileOperationDto)
+        [HttpGet("download/{filename}")]
+        public async Task<IActionResult> DownloadFile(string filename)
         {
-            var result = await _fileService.DownloadFile(fileOperationDto);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var fileRecord = await _fileRepository.GetFileRecord(userId, filename);
+            if (fileRecord == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _fileService.DownloadFile(new FileOperationDto { UserId = userId, Filename = filename, NodeId = fileRecord.NodeId });
 
             if (result != null)
             {
-                return Ok(result);
+                return File(result.Content, "application/octet-stream", result.Filename);
             }
 
             return NotFound();
         }
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchFiles([FromQuery] FileSearchDto fileSearchDto)
+        public async Task<IActionResult> SearchFiles([FromQuery] string query)
         {
-            var results = await _fileService.SearchFiles(fileSearchDto);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var results = await _fileRepository.SearchFileRecords(userId, query);
             return Ok(results);
+        }
+
+        [HttpPost("rename")]
+        public async Task<IActionResult> RenameFile([FromBody] FileRenameDto fileRenameDto)
+        {
+            var fileRecord = await _fileRepository.GetFileRecord(fileRenameDto.UserId, fileRenameDto.OldFilename);
+            if (fileRecord == null)
+            {
+                return NotFound();
+            }
+
+            fileRenameDto.NodeId = fileRecord.NodeId;
+            var result = await _fileService.RenameFile(fileRenameDto);
+
+            if (result.Success)
+            {
+                await _fileRepository.DeleteFileRecord(fileRenameDto.UserId, fileRenameDto.OldFilename);
+                await _fileRepository.AddFileRecord(new FileRecord
+                {
+                    UserId = fileRenameDto.UserId,
+                    Filename = fileRenameDto.NewFilename,
+                    NodeId = fileRenameDto.NodeId,
+                    Size = fileRecord.Size
+                });
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }

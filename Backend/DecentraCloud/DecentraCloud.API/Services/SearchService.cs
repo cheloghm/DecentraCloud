@@ -18,15 +18,41 @@ namespace DecentraCloud.API.Services
             _nodeService = nodeService;
         }
 
-        public async Task<List<SearchResultDto>> SearchData(string query)
+        public async Task<IEnumerable<FileSearchResultDto>> SearchFiles(string userId, string query)
         {
-            var results = new List<SearchResultDto>();
+            var nodes = await _nodeService.GetNodesByUser(userId);
+            var searchResults = new List<FileSearchResultDto>();
 
-            var nodes = await _nodeRepository.GetAllNodes();
             foreach (var node in nodes)
             {
-                var nodeResults = await _nodeService.SearchFilesInNode(node, query);
-                results.AddRange(nodeResults);
+                var nodeResults = await _nodeService.SearchFilesInNode(new FileSearchDto { NodeId = node.Id, Query = query });
+                if (nodeResults != null)
+                {
+                    searchResults.AddRange(nodeResults);
+                }
+            }
+
+            return searchResults;
+        }
+
+        public async Task<IEnumerable<SearchResultDto>> SearchData(string query)
+        {
+            // Implement the logic for searching data
+            var results = new List<SearchResultDto>();
+
+            var nodes = await _nodeService.GetAllNodes();
+            foreach (var node in nodes)
+            {
+                var nodeResults = await _nodeService.SearchFilesInNode(new FileSearchDto { NodeId = node.Id, Query = query });
+                if (nodeResults != null)
+                {
+                    results.AddRange(nodeResults.Select(r => new SearchResultDto
+                    {
+                        NodeId = node.Id,
+                        Filename = r.Filename,
+                        Snippet = r.Snippet
+                    }));
+                }
             }
 
             return results;

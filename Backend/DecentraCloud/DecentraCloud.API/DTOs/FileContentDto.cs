@@ -3,6 +3,6 @@
     public class FileContentDto
     {
         public string Filename { get; set; }
-        public string Content { get; set; }
+        public byte[] Content { get; set; }
     }
 }

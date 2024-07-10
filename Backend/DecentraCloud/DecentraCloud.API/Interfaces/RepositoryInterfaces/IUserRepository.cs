@@ -10,5 +10,6 @@ namespace DecentraCloud.API.Interfaces.RepositoryInterfaces
         Task<User> GetUserById(string userId);
         Task UpdateUser(User user);
         Task<bool> DeleteUser(string userId);
+        Task UpdateUserStorageUsage(string userId, long storageUsed);
     }
 }

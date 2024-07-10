@@ -80,6 +80,16 @@ const getFile = (userId, filename) => {
   }
 };
 
+const getFileSize = (filename) => {
+  const filePath = path.join(STORAGE_DIR, filename);
+  if (fs.existsSync(filePath)) {
+    const stats = fs.statSync(filePath);
+    return stats.size;
+  } else {
+    throw new Error('File not found');
+  }
+};
+
 const getFilePath = (userId, filename) => {
   const filePath = path.join(STORAGE_DIR, userId, filename);
   if (fs.existsSync(filePath)) {
@@ -111,11 +121,25 @@ const searchData = (userId, query) => {
   return results;
 };
 
+const renameFile = (userId, oldFilename, newFilename) => {
+  const userDir = path.join(STORAGE_DIR, userId);
+  const oldFilePath = path.join(userDir, oldFilename);
+  const newFilePath = path.join(userDir, newFilename);
+
+  if (fs.existsSync(oldFilePath)) {
+    fs.renameSync(oldFilePath, newFilePath);
+  } else {
+    throw new Error('File not found');
+  }
+};
+
 module.exports = {
   getStorageStats,
   saveFile,
   deleteFile,
   getFile,
   getFilePath,
-  searchData
+  searchData,
+  renameFile,
+  getFileSize
 };

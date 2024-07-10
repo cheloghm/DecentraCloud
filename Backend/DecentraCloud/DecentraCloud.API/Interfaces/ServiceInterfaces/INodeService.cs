@@ -1,6 +1,7 @@
 ﻿using DecentraCloud.API.DTOs;
 using DecentraCloud.API.Models;
-using System.Xml.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Interfaces.ServiceInterfaces
 {
@@ -12,12 +13,12 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
         Task<bool> DeleteFileFromNode(FileOperationDto fileOperationDto);
         Task<string> GetFileContentFromNode(FileOperationDto fileOperationDto);
         Task<IEnumerable<FileSearchResultDto>> SearchFilesInNode(FileSearchDto fileSearchDto);
-        Task<List<SearchResultDto>> SearchFilesInNode(Node node, string query);
+        Task<bool> RenameFileInNode(FileRenameDto fileRenameDto);
         Task<IEnumerable<Node>> GetNodesByUser(string userId);
         Task<bool> UpdateNode(Node node);
         Task<bool> DeleteNode(string nodeId);
         Task<IEnumerable<Node>> GetAllNodes();
+        Task<long> GetFileSize(string nodeId, string filename);
+        Task<Node> GetRandomNode();
     }
-
-
 }

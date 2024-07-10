@@ -6,6 +6,7 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
 {
     public interface ISearchService
     {
-        Task<List<SearchResultDto>> SearchData(string query);
+        Task<IEnumerable<FileSearchResultDto>> SearchFiles(string userId, string query);
+        Task<IEnumerable<SearchResultDto>> SearchData(string query);
     }
 }

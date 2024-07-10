@@ -1,10 +1,10 @@
 ﻿namespace DecentraCloud.API.DTOs
 {
-    public class FileUploadDto
+    public class FileRenameDto
     {
         public string NodeId { get; set; }
         public string UserId { get; set; }
-        public string Filename { get; set; }
-        public byte[] Data { get; set; }
+        public string OldFilename { get; set; }
+        public string NewFilename { get; set; }
     }
 }

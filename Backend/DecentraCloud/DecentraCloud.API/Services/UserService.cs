@@ -4,6 +4,7 @@ using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -12,6 +13,7 @@ namespace DecentraCloud.API.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly TokenHelper _tokenHelper;
+        private readonly string STORAGE_DIR = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "storage");
 
         public UserService(IUserRepository userRepository, TokenHelper tokenHelper)
         {
@@ -44,6 +46,13 @@ namespace DecentraCloud.API.Services
             // Generate token for the user
             var token = _tokenHelper.GenerateJwtToken(user);
             user.Token = token;
+
+            // Create user directory for storage
+            string userStoragePath = Path.Combine(STORAGE_DIR, user.Id.ToString());
+            if (!Directory.Exists(userStoragePath))
+            {
+                Directory.CreateDirectory(userStoragePath);
+            }
 
             return user;
         }

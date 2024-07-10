@@ -20,5 +20,6 @@ namespace DecentraCloud.API.Models
         public string Password { get; set; }
         public UserSettings Settings { get; set; }
         public string Token { get; set; }
+        public long UsedStorage { get; set; }
     }
 }
