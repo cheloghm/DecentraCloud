@@ -6,7 +6,7 @@ const { exec } = require('child_process');
 const storageService = require('./storageService');
 
 const NODE_CONFIG_PATH = path.join(__dirname, '../node_config.json');
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5000/api';
 
 let downtimeStart = null;
 
@@ -16,7 +16,7 @@ const reportNodeStatus = async () => {
       const config = JSON.parse(fs.readFileSync(NODE_CONFIG_PATH, 'utf8'));
 
       const uptime = getUptime();
-      const storageStats = getStorageStats();
+      const storageStats = storageService.getStorageStats();
       const onlineStatus = await getOnlineStatus();
       const systemHealth = await getSystemHealth();
       const downtime = getDowntime();
@@ -64,7 +64,7 @@ const getOnlineStatus = async () => {
 const getSystemHealth = async () => {
   const memoryStats = getMemoryStats();
   const cpuStats = getCpuStats();
-  const storageStats = getStorageHealth();
+  const storageStats = storageService.getStorageStats();
   const gpuStats = await getGpuHealth();
 
   return {
@@ -92,19 +92,6 @@ const getCpuStats = () => {
     speed: cpu.speed,
     times: cpu.times
   }));
-};
-
-const getStorageHealth = () => {
-  const disks = os.type() === 'Windows_NT' ? ['C:'] : ['/'];
-  return disks.map(disk => {
-    const stats = fs.statSync(disk);
-    return {
-      disk,
-      total: stats.blksize * stats.blocks,
-      free: stats.blksize * stats.bfree,
-      available: stats.blksize * stats.bavail
-    };
-  });
 };
 
 const getGpuHealth = async () => {

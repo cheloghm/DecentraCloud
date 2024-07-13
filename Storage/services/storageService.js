@@ -3,10 +3,9 @@ const path = require('path');
 const crypto = require('crypto');
 
 const STORAGE_DIR = path.join(__dirname, '../storage');
-const STORAGE_LIMIT = 1024 * 1024 * 1024; // 1GB
+const STORAGE_LIMIT = process.env.STORAGE_LIMIT || 1024 * 1024 * 1024; // 1GB
 
-// Define a consistent key for encryption
-const ENCRYPTION_KEY = crypto.createHash('sha256').update(String('my_secret_key')).digest(); // 32 bytes key for AES-256
+const ENCRYPTION_KEY = crypto.createHash('sha256').update(String(process.env.ENCRYPTION_KEY)).digest();
 const IV_LENGTH = 16; // AES block size
 
 if (!fs.existsSync(STORAGE_DIR)) {
@@ -48,19 +47,24 @@ const decrypt = (text) => {
 };
 
 const saveFile = (userId, filename, data) => {
-  const { availableStorage } = getStorageStats();
-  if (Buffer.byteLength(data, 'utf8') > availableStorage) {
-    throw new Error('Not enough storage space available');
-  }
+  try {
+    const { availableStorage } = getStorageStats();
+    if (Buffer.byteLength(data, 'utf8') > availableStorage) {
+      throw new Error('Not enough storage space available');
+    }
 
-  const userDir = path.join(STORAGE_DIR, userId);
-  if (!fs.existsSync(userDir)) {
-    fs.mkdirSync(userDir);
-  }
+    const userDir = path.join(STORAGE_DIR, userId);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir);
+    }
 
-  const encryptedData = encrypt(Buffer.from(data, 'utf8'));
-  const filePath = path.join(userDir, filename);
-  fs.writeFileSync(filePath, encryptedData, 'utf8');
+    const encryptedData = encrypt(Buffer.from(data, 'utf8'));
+    const filePath = path.join(userDir, filename);
+    fs.writeFileSync(filePath, encryptedData, 'utf8');
+  } catch (error) {
+    console.error('Error saving file:', error.message);
+    throw error;
+  }
 };
 
 const deleteFile = (userId, filename) => {

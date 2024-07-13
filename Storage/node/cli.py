@@ -3,7 +3,7 @@ import requests
 import json
 import os
 
-BASE_URL = "http://localhost:5000/api"  # Update this with the actual URL of the central server
+BASE_URL = os.getenv("BASE_URL", "http://localhost:5000/api")  # Use environment variable for base URL
 
 @click.group()
 def cli():

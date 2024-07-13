@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const storageService = require('../services/storageService');
 const replicationService = require('../services/replicationService');
-const jwt = require('jsonwebtoken'); // Ensure you have jwt imported
+const jwt = require('jsonwebtoken');
 
 // Middleware to check authentication
 const authenticate = (req, res, next) => {

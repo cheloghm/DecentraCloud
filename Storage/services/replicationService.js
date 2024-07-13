@@ -5,13 +5,13 @@ const crypto = require('crypto');
 const storageService = require('./storageService');
 
 const NODE_CONFIG_PATH = path.join(__dirname, '../node_config.json');
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5000/api';
 
 const replicateData = async (filename) => {
   try {
     if (fs.existsSync(NODE_CONFIG_PATH)) {
       const config = JSON.parse(fs.readFileSync(NODE_CONFIG_PATH, 'utf8'));
-      const filePath = storageService.getFilePath(filename);
+      const filePath = storageService.getFilePath(config.nodeId, filename);
 
       if (fs.existsSync(filePath)) {
         const data = fs.readFileSync(filePath, 'utf8');
