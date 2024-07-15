@@ -6,6 +6,7 @@ using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Repositories;
 using DecentraCloud.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -28,6 +29,7 @@ namespace DecentraCloud.API.Extensions
             services.AddScoped<INodeRepository, NodeRepository>();
             services.AddScoped<IFileService, FileService>();
             services.AddScoped<IFileRepository, FileRepository>();
+            services.AddScoped<IFilePermissionRepository, FilePermissionRepository>();
             services.AddScoped<ISearchService, SearchService>();
 
             var encryptionKey = configuration["Jwt:Key"];
@@ -75,7 +77,15 @@ namespace DecentraCloud.API.Extensions
             });
 
             services.AddAuthorization();
-            services.AddControllers();
+            services.AddControllers().ConfigureApiBehaviorOptions(options =>
+            {
+                options.SuppressConsumesConstraintForFormFileParameters = true;
+            });
+
+            services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 50 * 1024 * 1024; // 50 MB limit
+            });
 
             services.AddSwaggerGen(c =>
             {
@@ -104,6 +114,7 @@ namespace DecentraCloud.API.Extensions
                         new string[] {}
                     }
                 });
+                c.OperationFilter<SwaggerFileOperationFilter>();
             });
 
             services.AddCors(options =>

@@ -8,37 +8,37 @@ namespace DecentraCloud.API.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly IMongoCollection<User> _users;
+        private readonly DecentraCloudContext _context;
 
         public UserRepository(DecentraCloudContext context)
         {
-            _users = context.Users;
+            _context = context;
         }
 
         public async Task<User> GetUserByEmail(string email)
         {
-            return await _users.Find(user => user.Email == email).FirstOrDefaultAsync();
+            return await _context.Users.Find(user => user.Email == email).FirstOrDefaultAsync();
         }
 
         public async Task<User> RegisterUser(User user)
         {
-            await _users.InsertOneAsync(user);
+            await _context.Users.InsertOneAsync(user);
             return user;
         }
 
         public async Task<User> GetUserById(string userId)
         {
-            return await _users.Find(user => user.Id == userId).FirstOrDefaultAsync();
+            return await _context.Users.Find(user => user.Id == userId).FirstOrDefaultAsync();
         }
 
         public async Task UpdateUser(User user)
         {
-            await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+            await _context.Users.ReplaceOneAsync(u => u.Id == user.Id, user);
         }
 
         public async Task<bool> DeleteUser(string userId)
         {
-            var result = await _users.DeleteOneAsync(user => user.Id == userId);
+            var result = await _context.Users.DeleteOneAsync(user => user.Id == userId);
             return result.DeletedCount > 0;
         }
 
@@ -46,7 +46,7 @@ namespace DecentraCloud.API.Repositories
         {
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
             var update = Builders<User>.Update.Inc(u => u.UsedStorage, storageUsed);
-            await _users.UpdateOneAsync(filter, update);
+            await _context.Users.UpdateOneAsync(filter, update);
         }
     }
 }

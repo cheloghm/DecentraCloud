@@ -9,16 +9,16 @@ namespace DecentraCloud.API.Repositories
 {
     public class FileRepository : IFileRepository
     {
-        private readonly IMongoCollection<FileRecord> _files;
+        private readonly DecentraCloudContext _context;
 
         public FileRepository(DecentraCloudContext context)
         {
-            _files = context.Files;
+            _context = context;
         }
 
         public async Task AddFileRecord(FileRecord fileRecord)
         {
-            await _files.InsertOneAsync(fileRecord);
+            await _context.Files.InsertOneAsync(fileRecord);
         }
 
         public async Task<FileRecord> GetFileRecord(string userId, string filename)
@@ -27,7 +27,7 @@ namespace DecentraCloud.API.Repositories
                 Builders<FileRecord>.Filter.Eq(f => f.UserId, userId),
                 Builders<FileRecord>.Filter.Eq(f => f.Filename, filename)
             );
-            return await _files.Find(filter).FirstOrDefaultAsync();
+            return await _context.Files.Find(filter).FirstOrDefaultAsync();
         }
 
         public async Task<IEnumerable<FileRecord>> SearchFileRecords(string userId, string query)
@@ -36,7 +36,7 @@ namespace DecentraCloud.API.Repositories
                 Builders<FileRecord>.Filter.Eq(f => f.UserId, userId),
                 Builders<FileRecord>.Filter.Regex(f => f.Filename, new MongoDB.Bson.BsonRegularExpression(query, "i"))
             );
-            return await _files.Find(filter).ToListAsync();
+            return await _context.Files.Find(filter).ToListAsync();
         }
 
         public async Task<bool> DeleteFileRecord(string userId, string filename)
@@ -45,8 +45,18 @@ namespace DecentraCloud.API.Repositories
                 Builders<FileRecord>.Filter.Eq(f => f.UserId, userId),
                 Builders<FileRecord>.Filter.Eq(f => f.Filename, filename)
             );
-            var result = await _files.DeleteOneAsync(filter);
+            var result = await _context.Files.DeleteOneAsync(filter);
             return result.DeletedCount > 0;
+        }
+
+        public async Task<IEnumerable<FileRecord>> GetFilesByUserId(string userId)
+        {
+            return await _context.Files.Find(f => f.UserId == userId).ToListAsync();
+        }
+
+        public async Task<FileRecord> GetFileByFilename(string filename)
+        {
+            return await _context.Files.Find(f => f.Filename == filename).FirstOrDefaultAsync();
         }
     }
 }

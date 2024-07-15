@@ -1,22 +1,22 @@
-using DecentraCloud.API.Config;
-using DecentraCloud.API.Data;
 using DecentraCloud.API.Extensions;
 using DecentraCloud.API.Mappers;
 using DecentraCloud.API.Middlewares;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using MongoDB.Driver;
-using System.Text;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Kestrel to allow large file uploads
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 50 * 1024 * 1024; // 50 MB limit
+});
 
 // Add services to the container.
 builder.Services.AddDecentraCloudServices(builder.Configuration);
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-builder.Services.AddEndpointsApiExplorer(); // Ensure this line is present
-builder.Services.AddSwaggerGen(); // Ensure this line is present
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 

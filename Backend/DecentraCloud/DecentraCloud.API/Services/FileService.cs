@@ -3,7 +3,8 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
-
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
 {
@@ -12,13 +13,15 @@ namespace DecentraCloud.API.Services
         private readonly INodeService _nodeService;
         private readonly IFileRepository _fileRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IFilePermissionRepository _filePermissionRepository;
         private readonly EncryptionHelper _encryptionHelper;
 
-        public FileService(INodeService nodeService, IFileRepository fileRepository, IUserRepository userRepository, EncryptionHelper encryptionHelper)
+        public FileService(INodeService nodeService, IFileRepository fileRepository, IUserRepository userRepository, IFilePermissionRepository filePermissionRepository, EncryptionHelper encryptionHelper)
         {
             _nodeService = nodeService;
             _fileRepository = fileRepository;
             _userRepository = userRepository;
+            _filePermissionRepository = filePermissionRepository;
             _encryptionHelper = encryptionHelper;
         }
 
@@ -33,7 +36,6 @@ namespace DecentraCloud.API.Services
 
             var result = await _nodeService.UploadFileToNode(fileUploadDto);
 
-            // Update the user's used storage space in the database
             if (result)
             {
                 await _fileRepository.AddFileRecord(new FileRecord
@@ -46,8 +48,9 @@ namespace DecentraCloud.API.Services
                 await _userRepository.UpdateUserStorageUsage(fileUploadDto.UserId, fileUploadDto.Data.Length);
             }
 
-            return new FileOperationResult { Success = result, Message = "File uploaded successfully" };
+            return new FileOperationResult { Success = result, Message = result ? "File uploaded successfully" : "File upload failed" };
         }
+
 
         public async Task<FileContentDto> ViewFile(FileOperationDto fileOperationDto)
         {
@@ -55,7 +58,6 @@ namespace DecentraCloud.API.Services
 
             if (content != null)
             {
-                // Decrypt the file content
                 var decryptedContent = _encryptionHelper.Decrypt(Convert.FromBase64String(content));
                 return new FileContentDto { Filename = fileOperationDto.Filename, Content = decryptedContent };
             }
@@ -69,7 +71,6 @@ namespace DecentraCloud.API.Services
 
             if (content != null)
             {
-                // Decrypt the file content
                 var decryptedContent = _encryptionHelper.Decrypt(Convert.FromBase64String(content));
                 return new FileContentDto { Filename = fileOperationDto.Filename, Content = decryptedContent };
             }
@@ -81,7 +82,6 @@ namespace DecentraCloud.API.Services
         {
             var result = await _nodeService.DeleteFileFromNode(fileOperationDto);
 
-            // Update the user's used storage space in the database
             if (result)
             {
                 var fileRecord = await _fileRepository.GetFileRecord(fileOperationDto.UserId, fileOperationDto.Filename);
@@ -116,13 +116,150 @@ namespace DecentraCloud.API.Services
                         UserId = fileRenameDto.UserId,
                         Filename = fileRenameDto.NewFilename,
                         NodeId = fileRenameDto.NodeId,
-                        Size = fileRecord.Size // Use the size from the existing file record
+                        Size = fileRecord.Size
                     });
                 }
                 return new FileOperationResult { Success = true, Message = "File renamed successfully" };
             }
 
             return new FileOperationResult { Success = false, Message = "Failed to rename file" };
+        }
+
+        public async Task<FileOperationResult> ShareFile(FileShareDto fileShareDto)
+        {
+            var fileRecord = await _fileRepository.GetFileRecord(fileShareDto.OwnerId, fileShareDto.Filename);
+            if (fileRecord == null)
+            {
+                return new FileOperationResult { Success = false, Message = "File not found" };
+            }
+
+            var sharedUser = await _userRepository.GetUserByEmail(fileShareDto.Email);
+            if (sharedUser == null)
+            {
+                return new FileOperationResult { Success = false, Message = "User not found" };
+            }
+
+            var filePermission = new FilePermission
+            {
+                FileId = fileRecord.Id,
+                OwnerId = fileShareDto.OwnerId,
+                UserId = sharedUser.Id,
+                PermissionType = fileShareDto.PermissionType
+            };
+
+            await _filePermissionRepository.AddFilePermission(filePermission);
+            return new FileOperationResult { Success = true, Message = "File shared successfully" };
+        }
+
+        public async Task<FileOperationResult> RevokeFilePermission(FileRevokePermissionDto fileRevokePermissionDto)
+        {
+            var filePermission = await _filePermissionRepository.GetFilePermission(fileRevokePermissionDto.FileId, fileRevokePermissionDto.UserId);
+            if (filePermission == null)
+            {
+                return new FileOperationResult { Success = false, Message = "Permission not found" };
+            }
+
+            await _filePermissionRepository.DeleteFilePermission(filePermission.Id);
+            return new FileOperationResult { Success = true, Message = "Permission revoked successfully" };
+        }
+
+        public async Task<IEnumerable<FilePermissionDto>> GetFilePermissions(string fileId)
+        {
+            var permissions = await _filePermissionRepository.GetFilePermissions(fileId);
+            return permissions.Select(p => new FilePermissionDto
+            {
+                FileId = p.FileId,
+                UserId = p.UserId,
+                PermissionType = p.PermissionType
+            });
+        }
+
+        public async Task<bool> HasPermission(string userId, string fileId, string permissionType)
+        {
+            var permissions = await _filePermissionRepository.GetFilePermissions(fileId);
+            return permissions.Any(p => p.UserId == userId && p.PermissionType == permissionType);
+        }
+
+        public async Task<FileOperationResult> MoveFile(FileMoveDto fileMoveDto)
+        {
+            var deleteResult = await DeleteFile(new FileOperationDto
+            {
+                UserId = fileMoveDto.UserId,
+                Filename = fileMoveDto.OldFilename,
+                NodeId = fileMoveDto.OldNodeId
+            });
+
+            if (!deleteResult.Success)
+            {
+                return new FileOperationResult { Success = false, Message = "Failed to move file" };
+            }
+
+            var fileUploadDto = new FileUploadDto
+            {
+                UserId = fileMoveDto.UserId,
+                Filename = fileMoveDto.NewFilename,
+                Data = fileMoveDto.Data,
+                NodeId = fileMoveDto.NewNodeId
+            };
+
+            var uploadResult = await UploadFile(fileUploadDto);
+
+            return uploadResult;
+        }
+
+        public async Task<FileOperationResult> CopyFile(FileCopyDto fileCopyDto)
+        {
+            var fileContentDto = await DownloadFile(new FileOperationDto
+            {
+                UserId = fileCopyDto.UserId,
+                Filename = fileCopyDto.Filename,
+                NodeId = fileCopyDto.NodeId
+            });
+
+            if (fileContentDto == null)
+            {
+                return new FileOperationResult { Success = false, Message = "Failed to copy file" };
+            }
+
+            var fileUploadDto = new FileUploadDto
+            {
+                UserId = fileCopyDto.UserId,
+                Filename = fileCopyDto.NewFilename,
+                Data = fileContentDto.Content,
+                NodeId = fileCopyDto.NewNodeId
+            };
+
+            var uploadResult = await UploadFile(fileUploadDto);
+
+            return uploadResult;
+        }
+
+        public async Task<FileOperationResult> SaveFileVersion(FileVersionDto fileVersionDto)
+        {
+            var fileContentDto = await DownloadFile(new FileOperationDto
+            {
+                UserId = fileVersionDto.UserId,
+                Filename = fileVersionDto.Filename,
+                NodeId = fileVersionDto.NodeId
+            });
+
+            if (fileContentDto == null)
+            {
+                return new FileOperationResult { Success = false, Message = "Failed to save file version" };
+            }
+
+            var versionedFilename = $"{fileVersionDto.Filename}_v{fileVersionDto.VersionNumber}";
+            var fileUploadDto = new FileUploadDto
+            {
+                UserId = fileVersionDto.UserId,
+                Filename = versionedFilename,
+                Data = fileContentDto.Content,
+                NodeId = fileVersionDto.NodeId
+            };
+
+            var uploadResult = await UploadFile(fileUploadDto);
+
+            return uploadResult;
         }
     }
 }

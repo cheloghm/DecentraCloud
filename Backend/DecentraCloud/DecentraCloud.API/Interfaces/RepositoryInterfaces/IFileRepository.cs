@@ -8,6 +8,7 @@ namespace DecentraCloud.API.Interfaces.RepositoryInterfaces
         Task<FileRecord> GetFileRecord(string userId, string filename);
         Task<IEnumerable<FileRecord>> SearchFileRecords(string userId, string query);
         Task<bool> DeleteFileRecord(string userId, string filename);
-        // Other methods as needed...
+        Task<IEnumerable<FileRecord>> GetFilesByUserId(string userId); // Add this method
+        Task<FileRecord> GetFileByFilename(string filename);
     }
 }

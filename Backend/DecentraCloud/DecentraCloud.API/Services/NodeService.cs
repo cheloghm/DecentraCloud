@@ -3,50 +3,49 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
 {
     public class NodeService : INodeService
     {
-        private readonly IUserService _userService;
         private readonly INodeRepository _nodeRepository;
+        private readonly IUserRepository _userRepository;
         private readonly TokenHelper _tokenHelper;
         private readonly HttpClient _httpClient;
         private readonly EncryptionHelper _encryptionHelper;
 
-        public NodeService(IUserService userService, INodeRepository nodeRepository, TokenHelper tokenHelper, EncryptionHelper encryptionHelper)
+        public NodeService(INodeRepository nodeRepository, IUserRepository userRepository, TokenHelper tokenHelper, EncryptionHelper encryptionHelper)
         {
-            _userService = userService;
             _nodeRepository = nodeRepository;
+            _userRepository = userRepository;
             _tokenHelper = tokenHelper;
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient(new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            });
             _encryptionHelper = encryptionHelper;
         }
 
         public async Task<Node> RegisterNode(NodeRegistrationDto nodeRegistrationDto)
         {
-            var user = await _userService.AuthenticateUser(new UserLoginDto
-            {
-                Email = nodeRegistrationDto.Username,
-                Password = nodeRegistrationDto.Password
-            });
-
+            // Fetch user using email
+            var user = await _userRepository.GetUserByEmail(nodeRegistrationDto.Email);
             if (user == null)
             {
-                return null;
+                throw new Exception("User not found. Please go to decentracloud.com and sign up.");
             }
 
+            // Create and register the node
             var node = new Node
             {
                 UserId = user.Id,
                 Storage = nodeRegistrationDto.Storage,
-                Endpoint = nodeRegistrationDto.Endpoint
+                Endpoint = nodeRegistrationDto.Endpoint,
+                NodeName = nodeRegistrationDto.NodeName
             };
 
             await _nodeRepository.AddNode(node);
@@ -223,6 +222,5 @@ namespace DecentraCloud.API.Services
             var random = new Random();
             return nodes.ElementAt(random.Next(nodes.Count()));
         }
-
     }
 }

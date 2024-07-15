@@ -11,6 +11,11 @@ namespace DecentraCloud.API.Helpers
 
         public EncryptionHelper(string key)
         {
+            if (key.Length < 32)
+            {
+                throw new ArgumentException("Key must be at least 32 characters long");
+            }
+
             _key = Encoding.UTF8.GetBytes(key);
         }
 
@@ -19,7 +24,7 @@ namespace DecentraCloud.API.Helpers
             using (var aes = Aes.Create())
             {
                 aes.Key = _key;
-                aes.IV = new byte[16];
+                aes.IV = new byte[16]; // Initialization vector, can be customized
                 using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
                 {
                     return PerformCryptography(data, encryptor);
@@ -32,7 +37,7 @@ namespace DecentraCloud.API.Helpers
             using (var aes = Aes.Create())
             {
                 aes.Key = _key;
-                aes.IV = new byte[16];
+                aes.IV = new byte[16]; // Initialization vector, must match the one used for encryption
                 using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
                 {
                     return PerformCryptography(data, decryptor);
@@ -43,10 +48,14 @@ namespace DecentraCloud.API.Helpers
         private byte[] PerformCryptography(byte[] data, ICryptoTransform cryptoTransform)
         {
             using (var ms = new MemoryStream())
-            using (var cryptoStream = new CryptoStream(ms, cryptoTransform, CryptoStreamMode.Write))
             {
-                cryptoStream.Write(data, 0, data.Length);
-                cryptoStream.FlushFinalBlock();
+                using (var cryptoStream = new CryptoStream(ms, cryptoTransform, CryptoStreamMode.Write))
+                {
+                    using (var binaryWriter = new BinaryWriter(cryptoStream))
+                    {
+                        binaryWriter.Write(data);
+                    }
+                }
                 return ms.ToArray();
             }
         }

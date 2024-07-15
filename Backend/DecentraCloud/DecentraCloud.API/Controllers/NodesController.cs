@@ -20,14 +20,15 @@ namespace DecentraCloud.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> RegisterNode([FromBody] NodeRegistrationDto nodeRegistrationDto)
         {
-            var node = await _nodeService.RegisterNode(nodeRegistrationDto);
-
-            if (node == null)
+            try
             {
-                return BadRequest(new { message = "Node registration failed." });
+                var node = await _nodeService.RegisterNode(nodeRegistrationDto);
+                return Ok(node);
             }
-
-            return Ok(node);
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("status")]

@@ -1,12 +1,13 @@
 ﻿using DecentraCloud.API.Interfaces;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using System.Data.SqlTypes;
 
 namespace DecentraCloud.API.Models
 {
     public class Node : IEntityWithId
     {
         [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
 
         [BsonElement("userId")]
@@ -29,8 +30,14 @@ namespace DecentraCloud.API.Models
 
         [BsonElement("causeOfDowntime")]
         public string CauseOfDowntime { get; set; }
-        public string Token { get; set; }
-        public string Endpoint { get; set; }
-    }
 
+        [BsonElement("token")]
+        public string Token { get; set; }
+
+        [BsonElement("endpoint")]
+        public string Endpoint { get; set; }
+
+        [BsonElement("nodeName")] // New field for node name
+        public string NodeName { get; set; }
+    }
 }

@@ -123,5 +123,18 @@ namespace DecentraCloud.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpPost("verify")]
+        public IActionResult VerifyToken([FromBody] TokenDto tokenDto)
+        {
+            var principal = _tokenHelper.VerifyToken(tokenDto.Token);
+            if (principal == null)
+            {
+                return Unauthorized();
+            }
+
+            var userId = principal.FindFirst(ClaimTypes.NameIdentifier).Value;
+            return Ok(new { UserId = userId });
+        }
     }
 }

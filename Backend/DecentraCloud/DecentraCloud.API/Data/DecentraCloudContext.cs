@@ -28,5 +28,10 @@ namespace DecentraCloud.API.Data
         {
             get { return _database.GetCollection<FileRecord>("Files"); }
         }
+
+        public IMongoCollection<FilePermission> FilePermissions
+        {
+            get { return _database.GetCollection<FilePermission>("FilePermissions"); }
+        }
     }
 }
