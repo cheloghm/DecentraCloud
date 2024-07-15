@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const storageService = require('../services/storageService');
-const replicationService = require('../replication/replicationService'); // Updated path
-const monitoringService = require('../monitoring/monitoringService'); // Added import
+const replicationService = require('../services/replicationService'); // Updated path
+const monitoringService = require('../services/monitoringService'); // Added import
 const axios = require('axios');
 
 // Middleware to check authentication
