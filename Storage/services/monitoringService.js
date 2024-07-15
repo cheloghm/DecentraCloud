@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { exec } = require('child_process');
-const storageService = require('./storageService');
+const storageService = require('../services/storageService');
 
 const NODE_CONFIG_PATH = path.join(__dirname, '../node_config.json');
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5000/api';
@@ -49,7 +49,7 @@ const getUptime = () => {
 
 const getOnlineStatus = async () => {
   return new Promise((resolve, reject) => {
-    exec('ping -c 1 google.com', (error, stdout, stderr) => {
+    exec('ping -n 1 google.com', (error, stdout, stderr) => { // Adjusted for Windows
       if (error) {
         downtimeStart = new Date();
         resolve(false);

@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const storageService = require('./storageService');
+const storageService = require('../services/storageService');
 
 const NODE_CONFIG_PATH = path.join(__dirname, '../node_config.json');
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5000/api';

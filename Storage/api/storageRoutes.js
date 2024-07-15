@@ -33,6 +33,5 @@ router.post('/upload', authenticate, async (req, res) => {
   }
 });
 
-// Other routes...
 
 module.exports = router;
