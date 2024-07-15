@@ -127,6 +127,8 @@ namespace DecentraCloud.API.Extensions
                 });
             });
 
+            services.AddHostedService<TokenRenewalService>();
+
             return services;
         }
     }

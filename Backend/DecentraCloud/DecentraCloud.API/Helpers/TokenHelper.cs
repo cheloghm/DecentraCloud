@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using DecentraCloud.API.Models;
 using DecentraCloud.API.Interfaces;
+using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 
 namespace DecentraCloud.API.Helpers
 {
@@ -60,6 +61,22 @@ namespace DecentraCloud.API.Helpers
             catch
             {
                 return null;
+            }
+        }
+
+        // Token renewal logic
+        public void RenewTokens(IServiceScopeFactory scopeFactory)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var nodeRepository = scope.ServiceProvider.GetRequiredService<INodeRepository>();
+                var nodes = nodeRepository.GetAllNodes().Result;
+
+                foreach (var node in nodes)
+                {
+                    node.Token = GenerateJwtToken(node);
+                    nodeRepository.UpdateNode(node);
+                }
             }
         }
     }

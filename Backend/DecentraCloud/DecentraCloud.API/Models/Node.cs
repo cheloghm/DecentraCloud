@@ -37,7 +37,13 @@ namespace DecentraCloud.API.Models
         [BsonElement("endpoint")]
         public string Endpoint { get; set; }
 
-        [BsonElement("nodeName")] // New field for node name
+        [BsonElement("nodeName")]
         public string NodeName { get; set; }
+
+        [BsonElement("isOnline")]
+        public bool IsOnline { get; set; }
+
+        [BsonElement("password")]
+        public string Password { get; set; }
     }
 }

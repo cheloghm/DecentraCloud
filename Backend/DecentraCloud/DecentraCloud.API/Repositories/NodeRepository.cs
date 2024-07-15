@@ -47,5 +47,11 @@ namespace DecentraCloud.API.Repositories
         {
             return await _context.Nodes.Find(_ => true).ToListAsync();
         }
+
+        public async Task<IEnumerable<Node>> GetOnlineNodes()
+        {
+            return await _context.Nodes.Find(n => n.IsOnline).ToListAsync();
+        }
+
     }
 }

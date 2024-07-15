@@ -13,7 +13,7 @@ const authenticate = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const response = await axios.post('https://localhost:5001/api/token/verify', { token }); // Central server URL
+    const response = await axios.post('https://localhost:7240/api/token/verify', { token }); // Central server URL
     req.user = response.data;
     next();
   } catch (error) {

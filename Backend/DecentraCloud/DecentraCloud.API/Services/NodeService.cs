@@ -32,26 +32,23 @@ namespace DecentraCloud.API.Services
 
         public async Task<Node> RegisterNode(NodeRegistrationDto nodeRegistrationDto)
         {
-            // Fetch user using email
             var user = await _userRepository.GetUserByEmail(nodeRegistrationDto.Email);
             if (user == null)
             {
                 throw new Exception("User not found. Please go to decentracloud.com and sign up.");
             }
 
-            // Create and register the node
             var node = new Node
             {
                 UserId = user.Id,
                 Storage = nodeRegistrationDto.Storage,
                 Endpoint = nodeRegistrationDto.Endpoint,
-                NodeName = nodeRegistrationDto.NodeName
+                NodeName = nodeRegistrationDto.NodeName,
+                IsOnline = true
             };
 
-            await _nodeRepository.AddNode(node);
-
-            var token = _tokenHelper.GenerateJwtToken(node);
-            node.Token = token;
+            // Generate JWT token
+            node.Token = _tokenHelper.GenerateJwtToken(node);
 
             return node;
         }
@@ -101,22 +98,40 @@ namespace DecentraCloud.API.Services
 
         public async Task<bool> UploadFileToNode(FileUploadDto fileUploadDto)
         {
-            var node = await _nodeRepository.GetNodeById(fileUploadDto.NodeId);
+            var node = await GetRandomOnlineNode();
 
             if (node == null)
             {
                 return false;
             }
 
-            // Encrypt the file data before sending it to the node
-            var encryptedData = _encryptionHelper.Encrypt(fileUploadDto.Data);
-            fileUploadDto.Data = encryptedData;
-
-            var url = $"{node.Endpoint}/upload";
+            var url = $"{node.Endpoint}/storage/upload";
             var content = new StringContent(JsonSerializer.Serialize(fileUploadDto), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync(url, content);
+            var request = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = content
+            };
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", node.Token);
+
+            var response = await _httpClient.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response: {response.StatusCode}, Body: {responseBody}");
             return response.IsSuccessStatusCode;
+        }
+
+        private async Task<Node> GetRandomOnlineNode()
+        {
+            var nodes = await _nodeRepository.GetAllNodes();
+            var onlineNodes = nodes.Where(n => n.IsOnline).ToList();
+
+            if (!onlineNodes.Any())
+            {
+                return null;
+            }
+
+            var random = new Random();
+            return onlineNodes[random.Next(onlineNodes.Count)];
         }
 
         public async Task<bool> DeleteFileFromNode(FileOperationDto fileOperationDto)
