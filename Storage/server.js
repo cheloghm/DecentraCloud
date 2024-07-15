@@ -3,7 +3,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const storageRoutes = require('./api/storageRoutes');
-const authRoutes = require('./api/authRoutes'); 
 const fs = require('fs');
 const https = require('https');
 const path = require('path');
@@ -12,9 +11,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use('/storage', storageRoutes);
-app.use('/auth', authRoutes); // Add this line
 
 // Define the path to your certificate files
 const httpsOptions = {
@@ -25,3 +24,9 @@ const httpsOptions = {
 https.createServer(httpsOptions, app).listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Ensure NODE_ENDPOINT is set
+if (!process.env.NODE_ENDPOINT) {
+  console.error('NODE_ENDPOINT environment variable not set.');
+  process.exit(1);
+}
