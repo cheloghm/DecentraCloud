@@ -1,35 +1,54 @@
 const express = require('express');
 const router = express.Router();
 const storageService = require('../services/storageService');
-const replicationService = require('../services/replicationService'); // Updated path
-const monitoringService = require('../services/monitoringService'); // Added import
+const replicationService = require('../services/replicationService');
+const monitoringService = require('../services/monitoringService');
 const axios = require('axios');
+const multer = require('multer');
+const upload = multer();
+require('dotenv').config();
+
+// Create an axios instance with custom configuration
+const axiosInstance = axios.create({
+  httpsAgent: new (require('https')).Agent({ rejectUnauthorized: false }) // Allow self-signed certificates
+});
 
 // Middleware to check authentication
 const authenticate = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.sendStatus(401);
+  if (!authHeader) {
+    console.log('Authorization header missing');
+    return res.sendStatus(401);
+  }
 
   const token = authHeader.split(' ')[1];
+  console.log(`Received token: ${token}`);
 
   try {
-    const response = await axios.post('https://localhost:7240/api/token/verify', { token }); // Central server URL
-    req.user = response.data;
-    next();
+    const response = await axiosInstance.post(`${process.env.BASE_URL}/token/verify`, { token });
+    if (response.status === 200) {
+      req.user = response.data;
+      next();
+    } else {
+      res.sendStatus(403);
+    }
   } catch (error) {
+    console.error('Token verification failed:', error.message);
     res.sendStatus(403);
   }
 };
 
-// Upload a file
-router.post('/upload', authenticate, async (req, res) => {
-  const { userId, filename, data } = req.body;
+// Define routes
+router.post('/upload', authenticate, upload.single('file'), async (req, res) => {
+  const { userId, filename } = req.body;
+  const data = req.file.buffer; // Get the file buffer
 
   try {
     storageService.saveFile(userId, filename, data);
     await replicationService.replicateData(filename); // Trigger replication after upload
     res.status(200).send('File uploaded and replicated successfully');
   } catch (error) {
+    console.error('Error uploading file:', error.message);
     res.status(400).send(error.message);
   }
 });

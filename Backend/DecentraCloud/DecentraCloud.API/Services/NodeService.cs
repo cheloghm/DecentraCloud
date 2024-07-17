@@ -7,6 +7,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
+using System;
 
 namespace DecentraCloud.API.Services
 {
@@ -32,25 +34,59 @@ namespace DecentraCloud.API.Services
 
         public async Task<Node> RegisterNode(NodeRegistrationDto nodeRegistrationDto)
         {
+            // Fetch user using email
             var user = await _userRepository.GetUserByEmail(nodeRegistrationDto.Email);
             if (user == null)
             {
                 throw new Exception("User not found. Please go to decentracloud.com and sign up.");
             }
 
+            // Check if a node with the same userId and nodeName already exists
+            var existingNode = (await _nodeRepository.GetNodesByUser(user.Id))
+                .FirstOrDefault(n => n.NodeName == nodeRegistrationDto.NodeName);
+
+            if (existingNode != null)
+            {
+                throw new Exception("Node already exists. Please login.");
+            }
+
+            // Create and register the node
             var node = new Node
             {
                 UserId = user.Id,
                 Storage = nodeRegistrationDto.Storage,
-                Endpoint = nodeRegistrationDto.Endpoint,
                 NodeName = nodeRegistrationDto.NodeName,
-                IsOnline = true
+                Password = _encryptionHelper.HashPassword(nodeRegistrationDto.Password) // Hash the password
             };
 
-            // Generate JWT token
-            node.Token = _tokenHelper.GenerateJwtToken(node);
-
+            await _nodeRepository.AddNode(node);
             return node;
+        }
+
+        public async Task<string> LoginNode(NodeLoginDto nodeLoginDto)
+        {
+            var user = await _userRepository.GetUserByEmail(nodeLoginDto.Email);
+            if (user == null)
+            {
+                throw new Exception("Invalid email or password");
+            }
+
+            var node = (await _nodeRepository.GetNodesByUser(user.Id))
+                .FirstOrDefault(n => n.NodeName == nodeLoginDto.NodeName);
+
+            if (node == null || !_encryptionHelper.VerifyPassword(nodeLoginDto.Password, node.Password))
+            {
+                throw new Exception("Invalid Node Name or Password");
+            }
+
+            // Generate JWT token
+            var token = _tokenHelper.GenerateJwtToken(node);
+            node.Token = token;
+            node.IsOnline = true;
+            node.Endpoint = nodeLoginDto.Endpoint;
+            await _nodeRepository.UpdateNode(node);
+
+            return token;
         }
 
         public async Task<bool> UpdateNodeStatus(NodeStatusDto nodeStatusDto)
@@ -69,7 +105,7 @@ namespace DecentraCloud.API.Services
                 UsedStorage = nodeStatusDto.StorageStats.UsedStorage,
                 AvailableStorage = nodeStatusDto.StorageStats.AvailableStorage
             };
-            node.OnlineStatus = nodeStatusDto.OnlineStatus;
+            node.IsOnline = nodeStatusDto.IsOnline;
             node.CauseOfDowntime = nodeStatusDto.CauseOfDowntime;
 
             return await _nodeRepository.UpdateNode(node);
@@ -106,7 +142,11 @@ namespace DecentraCloud.API.Services
             }
 
             var url = $"{node.Endpoint}/storage/upload";
-            var content = new StringContent(JsonSerializer.Serialize(fileUploadDto), Encoding.UTF8, "application/json");
+            var content = new MultipartFormDataContent();
+            var fileContent = new ByteArrayContent(fileUploadDto.Data);
+            content.Add(fileContent, "file", fileUploadDto.Filename);
+            content.Add(new StringContent(fileUploadDto.UserId), "userId");
+            content.Add(new StringContent(fileUploadDto.Filename), "filename");
 
             var request = new HttpRequestMessage(HttpMethod.Post, url)
             {

@@ -2,8 +2,8 @@
 using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
-using DecentraCloud.API.Models;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Controllers
@@ -29,15 +29,7 @@ namespace DecentraCloud.API.Controllers
             try
             {
                 var node = await _nodeService.RegisterNode(nodeRegistrationDto);
-
-                // Generate JWT token
-                var token = _tokenHelper.GenerateJwtToken(node);
-                node.Token = token;
-
-                // Save the node with the token
-                await _nodeRepository.AddNode(node);
-
-                return Ok(new { node, token });
+                return Ok(node);
             }
             catch (Exception ex)
             {
@@ -50,23 +42,7 @@ namespace DecentraCloud.API.Controllers
         {
             try
             {
-                var node = await _nodeRepository.GetNodeById(nodeLoginDto.NodeId);
-                if (node == null)
-                {
-                    return Unauthorized(new { message = "Node not found." });
-                }
-
-                // Assume Password validation here
-                if (node.Password != nodeLoginDto.Password)
-                {
-                    return Unauthorized(new { message = "Invalid password." });
-                }
-
-                // Generate new JWT token
-                var token = _tokenHelper.GenerateJwtToken(node);
-                node.Token = token;
-                await _nodeRepository.UpdateNode(node);
-
+                var token = await _nodeService.LoginNode(nodeLoginDto);
                 return Ok(new { token });
             }
             catch (Exception ex)

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using BCrypt.Net;
 
 namespace DecentraCloud.API.Helpers
 {
@@ -58,6 +59,18 @@ namespace DecentraCloud.API.Helpers
                 }
                 return ms.ToArray();
             }
+        }
+
+        // Bcrypt hashing
+        public string HashPassword(string password)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(password);
+        }
+
+        // Bcrypt verification
+        public bool VerifyPassword(string password, string hashedPassword)
+        {
+            return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
         }
     }
 }

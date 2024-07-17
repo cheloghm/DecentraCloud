@@ -2,7 +2,9 @@
 {
     public class NodeLoginDto
     {
-        public string NodeId { get; set; }
+        public string NodeName { get; set; }
+        public string Email { get; set; }
         public string Password { get; set; }
+        public string Endpoint { get; set; }
     }
 }

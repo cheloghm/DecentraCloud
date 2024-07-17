@@ -17,10 +17,27 @@ namespace DecentraCloud.API.Helpers
         public TokenHelper(IConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+
+            if (string.IsNullOrEmpty(_configuration["Jwt:Key"]) ||
+                string.IsNullOrEmpty(_configuration["Jwt:Issuer"]) ||
+                string.IsNullOrEmpty(_configuration["Jwt:Audience"]))
+            {
+                throw new ArgumentException("JWT configuration is missing required values");
+            }
         }
 
         public string GenerateJwtToken(IEntityWithId entity)
         {
+            if (entity == null)
+            {
+                throw new ArgumentNullException(nameof(entity), "Entity cannot be null");
+            }
+
+            if (string.IsNullOrEmpty(entity.Id))
+            {
+                throw new ArgumentException("Entity ID cannot be null or empty", nameof(entity.Id));
+            }
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
             var tokenDescriptor = new SecurityTokenDescriptor

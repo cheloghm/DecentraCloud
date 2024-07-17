@@ -8,7 +8,9 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
     public interface INodeService
     {
         Task<Node> RegisterNode(NodeRegistrationDto nodeRegistrationDto);
+        Task<string> LoginNode(NodeLoginDto nodeLoginDto);
         Task<bool> UpdateNodeStatus(NodeStatusDto nodeStatusDto);
+        Task<long> GetFileSize(string nodeId, string filename);
         Task<bool> UploadFileToNode(FileUploadDto fileUploadDto);
         Task<bool> DeleteFileFromNode(FileOperationDto fileOperationDto);
         Task<string> GetFileContentFromNode(FileOperationDto fileOperationDto);
@@ -18,7 +20,6 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
         Task<bool> UpdateNode(Node node);
         Task<bool> DeleteNode(string nodeId);
         Task<IEnumerable<Node>> GetAllNodes();
-        Task<long> GetFileSize(string nodeId, string filename);
         Task<Node> GetRandomNode();
     }
 }

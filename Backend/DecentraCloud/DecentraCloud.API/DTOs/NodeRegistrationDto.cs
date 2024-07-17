@@ -5,7 +5,6 @@
         public string Email { get; set; }
         public string Password { get; set; }
         public int Storage { get; set; }
-        public string Endpoint { get; set; }
         public string NodeName { get; set; }
     }
 }

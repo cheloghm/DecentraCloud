@@ -25,9 +25,6 @@ namespace DecentraCloud.API.Models
         [BsonElement("storageStats")]
         public StorageStats StorageStats { get; set; }
 
-        [BsonElement("onlineStatus")]
-        public string OnlineStatus { get; set; }
-
         [BsonElement("causeOfDowntime")]
         public string CauseOfDowntime { get; set; }
 

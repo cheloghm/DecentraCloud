@@ -1,6 +1,7 @@
 ﻿using DecentraCloud.API.Data;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -18,6 +19,10 @@ namespace DecentraCloud.API.Repositories
 
         public async Task AddNode(Node node)
         {
+            if (string.IsNullOrEmpty(node.Id))
+            {
+                node.Id = ObjectId.GenerateNewId().ToString();
+            }
             await _context.Nodes.InsertOneAsync(node);
         }
 

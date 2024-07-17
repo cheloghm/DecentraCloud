@@ -20,6 +20,29 @@ const httpsOptions = {
   cert: fs.readFileSync(path.join(__dirname, 'certs', 'certificate.pem'))
 };
 
-https.createServer(httpsOptions, app).listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+function startServer(port) {
+  const server = https.createServer(httpsOptions, app).listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is already in use, trying another port...`);
+      startServer(port + 1); // Try the next port
+    } else {
+      console.error(`Server error: ${err.message}`);
+    }
+  });
+
+  return server;
+}
+
+const serverInstance = startServer(PORT);
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  serverInstance.close(() => {
+    console.log('Server terminated');
+    process.exit(0);
+  });
 });

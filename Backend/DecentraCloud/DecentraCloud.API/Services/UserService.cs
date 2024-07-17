@@ -13,12 +13,14 @@ namespace DecentraCloud.API.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly TokenHelper _tokenHelper;
+        private readonly EncryptionHelper _encryptionHelper;
         private readonly string STORAGE_DIR = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "storage");
 
-        public UserService(IUserRepository userRepository, TokenHelper tokenHelper)
+        public UserService(IUserRepository userRepository, TokenHelper tokenHelper, EncryptionHelper encryptionHelper)
         {
             _userRepository = userRepository;
             _tokenHelper = tokenHelper;
+            _encryptionHelper = encryptionHelper;
         }
 
         public async Task<User> RegisterUser(UserRegistrationDto userDto)
@@ -33,8 +35,8 @@ namespace DecentraCloud.API.Services
             {
                 Username = userDto.Username,
                 Email = userDto.Email,
-                Password = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
-                Settings = new UserSettings // Initialize settings with default values
+                Password = _encryptionHelper.HashPassword(userDto.Password),
+                Settings = new UserSettings
                 {
                     ReceiveNewsletter = false,
                     Theme = "light"
@@ -60,7 +62,7 @@ namespace DecentraCloud.API.Services
         public async Task<User> AuthenticateUser(UserLoginDto userDto)
         {
             var user = await _userRepository.GetUserByEmail(userDto.Email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(userDto.Password, user.Password))
+            if (user == null || !_encryptionHelper.VerifyPassword(userDto.Password, user.Password))
             {
                 throw new Exception("Invalid email or password");
             }
