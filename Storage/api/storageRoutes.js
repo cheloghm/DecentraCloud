@@ -7,6 +7,29 @@ const axios = require('axios');
 const multer = require('multer');
 const upload = multer();
 require('dotenv').config();
+const crypto = require('crypto');
+
+// Encryption Helper Functions
+const ENCRYPTION_KEY = crypto.createHash('sha256').update(String(process.env.ENCRYPTION_KEY)).digest();
+const IV_LENGTH = 16;
+
+const encrypt = (text) => {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
+};
+
+const decrypt = (text) => {
+  const textParts = text.split(':');
+  const iv = Buffer.from(textParts.shift(), 'hex');
+  const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+  const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+  let decrypted = decipher.update(encryptedText);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return decrypted;
+};
 
 // Create an axios instance with custom configuration
 const axiosInstance = axios.create({
@@ -44,8 +67,9 @@ router.post('/upload', authenticate, upload.single('file'), async (req, res) => 
   const data = req.file.buffer; // Get the file buffer
 
   try {
-    storageService.saveFile(userId, filename, data);
-    await replicationService.replicateData(filename); // Trigger replication after upload
+    const encryptedFilename = encrypt(filename);
+    storageService.saveFile(userId, encryptedFilename, data);
+    await replicationService.replicateData(encryptedFilename); // Trigger replication after upload
     res.status(200).send('File uploaded and replicated successfully');
   } catch (error) {
     console.error('Error uploading file:', error.message);
@@ -64,7 +88,8 @@ router.delete('/delete', authenticate, (req, res) => {
   const { userId, filename } = req.body;
 
   try {
-    storageService.deleteFile(userId, filename);
+    const encryptedFilename = encrypt(filename);
+    storageService.deleteFile(userId, encryptedFilename);
     res.status(200).send('File deleted successfully');
   } catch (error) {
     res.status(400).send(error.message);
@@ -76,7 +101,8 @@ router.get('/view/:userId/:filename', authenticate, (req, res) => {
   const { userId, filename } = req.params;
 
   try {
-    const fileContent = storageService.getFile(userId, filename);
+    const encryptedFilename = encrypt(filename);
+    const fileContent = storageService.getFile(userId, encryptedFilename);
     res.status(200).send(fileContent);
   } catch (error) {
     res.status(400).send(error.message);
@@ -88,7 +114,8 @@ router.get('/download/:userId/:filename', authenticate, (req, res) => {
   const { userId, filename } = req.params;
 
   try {
-    const fileContent = storageService.getFile(userId, filename);
+    const encryptedFilename = encrypt(filename);
+    const fileContent = storageService.getFile(userId, encryptedFilename);
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
     res.send(fileContent);
   } catch (error) {
@@ -113,7 +140,9 @@ router.post('/rename', authenticate, (req, res) => {
   const { userId, oldFilename, newFilename } = req.body;
 
   try {
-    storageService.renameFile(userId, oldFilename, newFilename);
+    const encryptedOldFilename = encrypt(oldFilename);
+    const encryptedNewFilename = encrypt(newFilename);
+    storageService.renameFile(userId, encryptedOldFilename, encryptedNewFilename);
     res.status(200).send('File renamed successfully');
   } catch (error) {
     res.status(400).send(error.message);
@@ -123,7 +152,8 @@ router.post('/rename', authenticate, (req, res) => {
 // Get file size
 router.get('/file-size/:filename', authenticate, (req, res) => {
   const { filename } = req.params;
-  const fileSize = storageService.getFileSize(filename);
+  const encryptedFilename = encrypt(filename);
+  const fileSize = storageService.getFileSize(encryptedFilename);
   res.status(200).send(fileSize.toString());
 });
 

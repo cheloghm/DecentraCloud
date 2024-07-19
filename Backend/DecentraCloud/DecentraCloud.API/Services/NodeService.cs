@@ -3,12 +3,12 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Linq;
-using System;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
 {
@@ -34,14 +34,12 @@ namespace DecentraCloud.API.Services
 
         public async Task<Node> RegisterNode(NodeRegistrationDto nodeRegistrationDto)
         {
-            // Fetch user using email
             var user = await _userRepository.GetUserByEmail(nodeRegistrationDto.Email);
             if (user == null)
             {
                 throw new Exception("User not found. Please go to decentracloud.com and sign up.");
             }
 
-            // Check if a node with the same userId and nodeName already exists
             var existingNode = (await _nodeRepository.GetNodesByUser(user.Id))
                 .FirstOrDefault(n => n.NodeName == nodeRegistrationDto.NodeName);
 
@@ -50,13 +48,12 @@ namespace DecentraCloud.API.Services
                 throw new Exception("Node already exists. Please login.");
             }
 
-            // Create and register the node
             var node = new Node
             {
                 UserId = user.Id,
                 Storage = nodeRegistrationDto.Storage,
                 NodeName = nodeRegistrationDto.NodeName,
-                Password = _encryptionHelper.HashPassword(nodeRegistrationDto.Password) // Hash the password
+                Password = _encryptionHelper.HashPassword(nodeRegistrationDto.Password)
             };
 
             await _nodeRepository.AddNode(node);
@@ -79,7 +76,6 @@ namespace DecentraCloud.API.Services
                 throw new Exception("Invalid Node Name or Password");
             }
 
-            // Generate JWT token
             var token = _tokenHelper.GenerateJwtToken(node);
             node.Token = token;
             node.IsOnline = true;
@@ -92,7 +88,6 @@ namespace DecentraCloud.API.Services
         public async Task<bool> UpdateNodeStatus(NodeStatusDto nodeStatusDto)
         {
             var node = await _nodeRepository.GetNodeById(nodeStatusDto.NodeId);
-
             if (node == null)
             {
                 return false;
@@ -114,7 +109,6 @@ namespace DecentraCloud.API.Services
         public async Task<long> GetFileSize(string nodeId, string filename)
         {
             var node = await _nodeRepository.GetNodeById(nodeId);
-
             if (node == null)
             {
                 return 0;
@@ -122,7 +116,6 @@ namespace DecentraCloud.API.Services
 
             var url = $"{node.Endpoint}/file-size/{filename}";
             var response = await _httpClient.GetAsync(url);
-
             if (!response.IsSuccessStatusCode)
             {
                 return 0;
@@ -135,7 +128,6 @@ namespace DecentraCloud.API.Services
         public async Task<bool> UploadFileToNode(FileUploadDto fileUploadDto)
         {
             var node = await GetRandomOnlineNode();
-
             if (node == null)
             {
                 return false;
@@ -164,7 +156,6 @@ namespace DecentraCloud.API.Services
         {
             var nodes = await _nodeRepository.GetAllNodes();
             var onlineNodes = nodes.Where(n => n.IsOnline).ToList();
-
             if (!onlineNodes.Any())
             {
                 return null;
@@ -177,7 +168,6 @@ namespace DecentraCloud.API.Services
         public async Task<bool> DeleteFileFromNode(FileOperationDto fileOperationDto)
         {
             var node = await _nodeRepository.GetNodeById(fileOperationDto.NodeId);
-
             if (node == null)
             {
                 return false;
@@ -193,7 +183,6 @@ namespace DecentraCloud.API.Services
         public async Task<string> GetFileContentFromNode(FileOperationDto fileOperationDto)
         {
             var node = await _nodeRepository.GetNodeById(fileOperationDto.NodeId);
-
             if (node == null)
             {
                 return null;
@@ -201,7 +190,6 @@ namespace DecentraCloud.API.Services
 
             var url = $"{node.Endpoint}/view/{fileOperationDto.Filename}";
             var response = await _httpClient.GetAsync(url);
-
             if (!response.IsSuccessStatusCode)
             {
                 return null;
@@ -213,7 +201,6 @@ namespace DecentraCloud.API.Services
         public async Task<IEnumerable<FileSearchResultDto>> SearchFilesInNode(FileSearchDto fileSearchDto)
         {
             var node = await _nodeRepository.GetNodeById(fileSearchDto.NodeId);
-
             if (node == null)
             {
                 return null;
@@ -221,7 +208,6 @@ namespace DecentraCloud.API.Services
 
             var url = $"{node.Endpoint}/search?query={fileSearchDto.Query}";
             var response = await _httpClient.GetAsync(url);
-
             if (!response.IsSuccessStatusCode)
             {
                 return null;
@@ -234,7 +220,6 @@ namespace DecentraCloud.API.Services
         public async Task<bool> RenameFileInNode(FileRenameDto fileRenameDto)
         {
             var node = await _nodeRepository.GetNodeById(fileRenameDto.NodeId);
-
             if (node == null)
             {
                 return false;
@@ -245,6 +230,18 @@ namespace DecentraCloud.API.Services
 
             var response = await _httpClient.PostAsync(url, content);
             return response.IsSuccessStatusCode;
+        }
+
+        public async Task<IEnumerable<NodeDto>> GetAllNodes()
+        {
+            var nodes = await _nodeRepository.GetAllNodes();
+            return nodes.Select(n => new NodeDto
+            {
+                NodeName = n.NodeName,
+                Endpoint = n.Endpoint,
+                IsOnline = n.IsOnline,
+                Storage = n.Storage
+            });
         }
 
         public async Task<IEnumerable<Node>> GetNodesByUser(string userId)
@@ -260,11 +257,6 @@ namespace DecentraCloud.API.Services
         public async Task<bool> DeleteNode(string nodeId)
         {
             return await _nodeRepository.DeleteNode(nodeId);
-        }
-
-        public async Task<IEnumerable<Node>> GetAllNodes()
-        {
-            return await _nodeRepository.GetAllNodes();
         }
 
         public async Task<Node> GetRandomNode()

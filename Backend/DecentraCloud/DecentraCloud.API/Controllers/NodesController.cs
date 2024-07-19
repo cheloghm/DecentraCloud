@@ -2,6 +2,7 @@
 using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -52,6 +53,7 @@ namespace DecentraCloud.API.Controllers
         }
 
         [HttpPost("status")]
+        [Authorize]
         public async Task<IActionResult> UpdateNodeStatus([FromBody] NodeStatusDto nodeStatusDto)
         {
             var result = await _nodeService.UpdateNodeStatus(nodeStatusDto);
@@ -65,6 +67,7 @@ namespace DecentraCloud.API.Controllers
         }
 
         [HttpGet("all")]
+        [Authorize]
         public async Task<IActionResult> GetAllNodes()
         {
             var nodes = await _nodeService.GetAllNodes();

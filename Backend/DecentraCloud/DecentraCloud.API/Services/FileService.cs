@@ -4,6 +4,7 @@ using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -30,6 +31,10 @@ namespace DecentraCloud.API.Services
             // Encrypt the file data before upload
             fileUploadDto.Data = _encryptionHelper.Encrypt(fileUploadDto.Data);
 
+            // Encrypt the file name
+            var encryptedFilename = _encryptionHelper.Encrypt(Encoding.UTF8.GetBytes(fileUploadDto.Filename));
+            fileUploadDto.Filename = Convert.ToBase64String(encryptedFilename);
+
             // Randomly select a node
             var node = await _nodeService.GetRandomNode();
             fileUploadDto.NodeId = node.Id;
@@ -43,7 +48,8 @@ namespace DecentraCloud.API.Services
                     UserId = fileUploadDto.UserId,
                     Filename = fileUploadDto.Filename,
                     NodeId = fileUploadDto.NodeId,
-                    Size = fileUploadDto.Data.Length
+                    Size = fileUploadDto.Data.Length,
+                    OriginalFilename = fileUploadDto.OriginalFilename // Save original filename
                 });
                 await _userRepository.UpdateUserStorageUsage(fileUploadDto.UserId, fileUploadDto.Data.Length);
             }
@@ -51,9 +57,11 @@ namespace DecentraCloud.API.Services
             return new FileOperationResult { Success = result, Message = result ? "File uploaded successfully" : "File upload failed" };
         }
 
-
         public async Task<FileContentDto> ViewFile(FileOperationDto fileOperationDto)
         {
+            var encryptedFilename = Convert.ToBase64String(_encryptionHelper.Encrypt(Encoding.UTF8.GetBytes(fileOperationDto.Filename)));
+            fileOperationDto.Filename = encryptedFilename;
+
             var content = await _nodeService.GetFileContentFromNode(fileOperationDto);
 
             if (content != null)
@@ -67,6 +75,9 @@ namespace DecentraCloud.API.Services
 
         public async Task<FileContentDto> DownloadFile(FileOperationDto fileOperationDto)
         {
+            var encryptedFilename = Convert.ToBase64String(_encryptionHelper.Encrypt(Encoding.UTF8.GetBytes(fileOperationDto.Filename)));
+            fileOperationDto.Filename = encryptedFilename;
+
             var content = await _nodeService.GetFileContentFromNode(fileOperationDto);
 
             if (content != null)
@@ -80,6 +91,9 @@ namespace DecentraCloud.API.Services
 
         public async Task<FileOperationResult> DeleteFile(FileOperationDto fileOperationDto)
         {
+            var encryptedFilename = Convert.ToBase64String(_encryptionHelper.Encrypt(Encoding.UTF8.GetBytes(fileOperationDto.Filename)));
+            fileOperationDto.Filename = encryptedFilename;
+
             var result = await _nodeService.DeleteFileFromNode(fileOperationDto);
 
             if (result)

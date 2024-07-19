@@ -2,9 +2,10 @@
 {
     public class FileUploadDto
     {
-        public string NodeId { get; set; }
         public string UserId { get; set; }
         public string Filename { get; set; }
+        public string OriginalFilename { get; set; }
         public byte[] Data { get; set; }
+        public string NodeId { get; set; }
     }
 }

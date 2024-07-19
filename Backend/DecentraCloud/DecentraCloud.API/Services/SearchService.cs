@@ -3,6 +3,7 @@ using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -37,7 +38,6 @@ namespace DecentraCloud.API.Services
 
         public async Task<IEnumerable<SearchResultDto>> SearchData(string query)
         {
-            // Implement the logic for searching data
             var results = new List<SearchResultDto>();
 
             var nodes = await _nodeService.GetAllNodes();
