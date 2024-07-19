@@ -31,9 +31,9 @@ namespace DecentraCloud.API.Services
             // Encrypt the file data before upload
             fileUploadDto.Data = _encryptionHelper.Encrypt(fileUploadDto.Data);
 
-            // Encrypt the file name
-            var encryptedFilename = _encryptionHelper.Encrypt(Encoding.UTF8.GetBytes(fileUploadDto.Filename));
-            fileUploadDto.Filename = Convert.ToBase64String(encryptedFilename);
+            // Encrypt the filename but keep the original filename
+            var encryptedFilename = Convert.ToBase64String(_encryptionHelper.Encrypt(Encoding.UTF8.GetBytes(fileUploadDto.Filename)));
+            fileUploadDto.Filename = encryptedFilename;
 
             // Randomly select a node
             var node = await _nodeService.GetRandomNode();
@@ -47,9 +47,9 @@ namespace DecentraCloud.API.Services
                 {
                     UserId = fileUploadDto.UserId,
                     Filename = fileUploadDto.Filename,
+                    OriginalFilename = fileUploadDto.OriginalFilename, // Store the original filename as is
                     NodeId = fileUploadDto.NodeId,
-                    Size = fileUploadDto.Data.Length,
-                    OriginalFilename = fileUploadDto.OriginalFilename // Save original filename
+                    Size = fileUploadDto.Data.Length
                 });
                 await _userRepository.UpdateUserStorageUsage(fileUploadDto.UserId, fileUploadDto.Data.Length);
             }

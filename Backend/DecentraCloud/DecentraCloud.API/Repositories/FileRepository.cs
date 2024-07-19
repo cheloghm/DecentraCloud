@@ -58,5 +58,15 @@ namespace DecentraCloud.API.Repositories
         {
             return await _context.Files.Find(f => f.Filename == filename).FirstOrDefaultAsync();
         }
+
+        public async Task<FileRecord> GetFileRecordByOriginalFilename(string userId, string originalFilename)
+        {
+            var filter = Builders<FileRecord>.Filter.And(
+                Builders<FileRecord>.Filter.Eq(f => f.UserId, userId),
+                Builders<FileRecord>.Filter.Eq(f => f.OriginalFilename, originalFilename)
+            );
+            return await _context.Files.Find(filter).FirstOrDefaultAsync();
+        }
+
     }
 }

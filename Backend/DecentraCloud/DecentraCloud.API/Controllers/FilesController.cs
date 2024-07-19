@@ -46,6 +46,7 @@ namespace DecentraCloud.API.Controllers
             {
                 UserId = userId,
                 Filename = file.FileName,
+                OriginalFilename = file.FileName,
                 Data = await FileHelper.ConvertToByteArrayAsync(file)
             };
 
@@ -58,7 +59,6 @@ namespace DecentraCloud.API.Controllers
 
             return BadRequest(result);
         }
-
 
         [HttpDelete("delete/{filename}")]
         public async Task<IActionResult> DeleteFile(string filename)
@@ -90,7 +90,7 @@ namespace DecentraCloud.API.Controllers
         public async Task<IActionResult> ViewFile(string filename)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var fileRecord = await _fileRepository.GetFileRecord(userId, filename);
+            var fileRecord = await _fileRepository.GetFileRecordByOriginalFilename(userId, filename);
 
             if (fileRecord == null)
             {
@@ -108,7 +108,7 @@ namespace DecentraCloud.API.Controllers
             var fileOperationDto = new FileOperationDto
             {
                 UserId = userId,
-                Filename = filename,
+                Filename = fileRecord.Filename, // Use the encrypted filename
                 NodeId = fileRecord.NodeId
             };
 
@@ -126,7 +126,7 @@ namespace DecentraCloud.API.Controllers
         public async Task<IActionResult> DownloadFile(string filename)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var fileRecord = await _fileRepository.GetFileRecord(userId, filename);
+            var fileRecord = await _fileRepository.GetFileRecordByOriginalFilename(userId, filename);
 
             if (fileRecord == null)
             {
@@ -144,7 +144,7 @@ namespace DecentraCloud.API.Controllers
             var fileOperationDto = new FileOperationDto
             {
                 UserId = userId,
-                Filename = filename,
+                Filename = fileRecord.Filename, // Use the encrypted filename
                 NodeId = fileRecord.NodeId
             };
 
