@@ -29,8 +29,6 @@ namespace DecentraCloud.API.Extensions
             services.AddScoped<INodeRepository, NodeRepository>();
             services.AddScoped<IFileService, FileService>();
             services.AddScoped<IFileRepository, FileRepository>();
-            services.AddScoped<IFilePermissionRepository, FilePermissionRepository>();
-            services.AddScoped<ISearchService, SearchService>();
 
             var encryptionKey = configuration["Jwt:Key"];
             services.AddSingleton(new EncryptionHelper(encryptionKey));

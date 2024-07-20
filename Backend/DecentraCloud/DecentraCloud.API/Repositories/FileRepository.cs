@@ -67,6 +67,5 @@ namespace DecentraCloud.API.Repositories
             );
             return await _context.Files.Find(filter).FirstOrDefaultAsync();
         }
-
     }
 }
