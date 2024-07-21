@@ -4,8 +4,6 @@ using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -32,24 +30,31 @@ namespace DecentraCloud.API.Services
 
             // Generate UUID for the file
             var uuid = Guid.NewGuid().ToString();
-            fileUploadDto.Filename = uuid;
+            fileUploadDto.Uuid = uuid;
 
             // Randomly select a node
             var node = await _nodeService.GetRandomNode();
             fileUploadDto.NodeId = node.Id;
 
-            var result = await _nodeService.UploadFileToNode(fileUploadDto);
+            // Set the filename to UUID for storage node
+            var result = await _nodeService.UploadFileToNode(new FileUploadDto
+            {
+                UserId = fileUploadDto.UserId,
+                Filename = uuid, // UUID used as filename on storage node
+                Data = fileUploadDto.Data,
+                NodeId = fileUploadDto.NodeId
+            });
 
             if (result)
             {
+                // Store the original filename in the database
                 await _fileRepository.AddFileRecord(new FileRecord
                 {
                     UserId = fileUploadDto.UserId,
-                    Filename = uuid,
-                    OriginalFilename = fileUploadDto.OriginalFilename,
+                    Filename = fileUploadDto.Filename, // Original filename
                     NodeId = fileUploadDto.NodeId,
                     Size = fileUploadDto.Data.Length,
-                    Uuid = uuid
+                    Uuid = uuid // UUID
                 });
 
                 await _userRepository.UpdateUserStorageUsage(fileUploadDto.UserId, fileUploadDto.Data.Length);
@@ -57,6 +62,5 @@ namespace DecentraCloud.API.Services
 
             return new FileOperationResult { Success = result, Message = result ? "File uploaded successfully" : "File upload failed" };
         }
-
     }
 }

@@ -3,6 +3,7 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -44,8 +45,7 @@ namespace DecentraCloud.API.Controllers
             var fileUploadDto = new FileUploadDto
             {
                 UserId = userId,
-                Filename = file.FileName,
-                OriginalFilename = file.FileName,
+                Filename = file.FileName,  // Original filename
                 Data = await FileHelper.ConvertToByteArrayAsync(file)
             };
 

@@ -10,7 +10,6 @@ namespace DecentraCloud.API.Models
         public string Id { get; set; }
         public string UserId { get; set; }
         public string Filename { get; set; }
-        public string OriginalFilename { get; set; }
         public string NodeId { get; set; }
         public long Size { get; set; }
         public string Uuid { get; set; }
