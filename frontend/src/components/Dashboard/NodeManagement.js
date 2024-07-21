@@ -1,40 +1,49 @@
-// src/components/Dashboard/NodeManagement.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import config from '../../config';
+import Modal from '../Modal';
+
+const { apiUrl } = config;
 
 const NodeManagement = () => {
   const [nodes, setNodes] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [formData, setFormData] = useState({
     storage: '',
-    // Add other properties if needed
   });
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const fetchNodes = async () => {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const token = user?.token;
-      if (!token) return;
-
-      try {
-        const response = await axios.get(`http://localhost:5000/api/NodeManagement/nodes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setNodes(response.data);
-      } catch (error) {
-        console.error('Failed to fetch nodes:', error);
-      }
-    };
-
     fetchNodes();
   }, []);
 
-  const handleNodeSelect = (node) => {
-    setSelectedNode(node);
-    setFormData({
-      storage: node.storage,
-      // Add other properties if needed
-    });
+  const fetchNodes = async () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    try {
+      const response = await axios.get(`${apiUrl}/nodes/all`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setNodes(response.data);
+    } catch (error) {
+      console.error('Failed to fetch nodes:', error);
+    }
+  };
+
+  const handleNodeSelect = async (nodeId) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    try {
+      const response = await axios.get(`${apiUrl}/nodemanagement/node/${nodeId}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setSelectedNode(response.data);
+      setFormData({ storage: response.data.storage });
+    } catch (error) {
+      console.error('Failed to fetch node details:', error);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -45,33 +54,36 @@ const NodeManagement = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     const user = JSON.parse(localStorage.getItem('user'));
-    const token = user?.token;
-    if (!token) return;
+    if (!user || !selectedNode) return;
 
     try {
-      await axios.put(`http://localhost:5000/api/NodeManagement/node`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
+      await axios.put(`${apiUrl}/nodemanagement/node/${selectedNode.id}`, formData, {
+        headers: { Authorization: `Bearer ${user.token}` },
       });
-
-      alert('Node updated successfully');
+      setMessage('Node updated successfully');
+      fetchNodes(); // Refresh the node list
+      setSelectedNode(null); // Close modal
     } catch (error) {
       console.error('Failed to update node:', error);
+      setMessage('Failed to update node');
     }
   };
 
   const handleDeleteNode = async (nodeId) => {
+    if (!window.confirm('Are you sure you want to delete this node? This action cannot be undone.')) return;
+
     const user = JSON.parse(localStorage.getItem('user'));
-    const token = user?.token;
-    if (!token) return;
+    if (!user) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/NodeManagement/node/${nodeId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      await axios.delete(`${apiUrl}/nodemanagement/node/${nodeId}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
       });
-
-      setNodes(nodes.filter((node) => node.id !== nodeId));
+      setMessage('Node deleted successfully');
+      fetchNodes(); // Refresh the node list
     } catch (error) {
       console.error('Failed to delete node:', error);
+      setMessage('Failed to delete node');
     }
   };
 
@@ -80,31 +92,52 @@ const NodeManagement = () => {
       <h1>Node Management Dashboard</h1>
       <div>
         {nodes.map((node) => (
-          <div key={node.id} onClick={() => handleNodeSelect(node)}>
-            <h2>Node ID: {node.id}</h2>
-            <p>Storage: {node.storage} GB</p>
-            <button onClick={() => handleDeleteNode(node.id)}>Delete Node</button>
+          <div key={node.id} onClick={() => handleNodeSelect(node.id)} style={styles.nodeCard}>
+            <h2>{node.nodeName}</h2>
+            <p>Online: {node.isOnline ? 'Yes' : 'No'}</p>
+            <p>Endpoint: {node.endpoint}</p>
           </div>
         ))}
       </div>
       {selectedNode && (
-        <form onSubmit={handleFormSubmit}>
-          <h2>Update Node</h2>
-          <div>
-            <label>Storage</label>
-            <input
-              type="number"
-              name="storage"
-              value={formData.storage}
-              onChange={handleInputChange}
-            />
-          </div>
-          {/* Add other input fields if needed */}
-          <button type="submit">Update Node</button>
-        </form>
+        <Modal onClose={() => setSelectedNode(null)}>
+          <form onSubmit={handleFormSubmit}>
+            <h2>{selectedNode.nodeName}</h2>
+            <p>Node ID: {selectedNode.id}</p>
+            <p>Online: {selectedNode.isOnline ? 'Yes' : 'No'}</p>
+            <p>Endpoint: {selectedNode.endpoint}</p>
+            <label>
+              Storage:
+              <input
+                type="number"
+                name="storage"
+                value={formData.storage}
+                onChange={handleInputChange}
+              />
+            </label>
+            <button type="submit">Update</button>
+            <button type="button" onClick={() => handleDeleteNode(selectedNode.id)} style={styles.deleteButton}>Delete</button>
+          </form>
+          {message && <p>{message}</p>}
+        </Modal>
       )}
     </div>
   );
+};
+
+const styles = {
+  nodeCard: {
+    border: '1px solid #ccc',
+    padding: '10px',
+    margin: '10px',
+    borderRadius: '5px',
+    cursor: 'pointer',
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    color: 'white',
+    marginTop: '10px',
+  },
 };
 
 export default NodeManagement;

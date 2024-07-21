@@ -1,6 +1,7 @@
 import axios from 'axios';
+import config from '../config';
 
-const apiUrl = 'https://localhost:7240/api'; // Adjust the URL as needed
+const { apiUrl } = config;
 
 const login = async (credentials) => {
   try {
