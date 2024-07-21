@@ -16,6 +16,7 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
         Task<bool> UpdateNode(Node node);
         Task<bool> DeleteNode(string nodeId);
         Task<IEnumerable<NodeDto>> GetAllNodes();
+        Task<Node> GetNodeById(string nodeId); 
         Task<Node> GetRandomNode();
     }
 }

@@ -5,6 +5,7 @@ using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Controllers
@@ -70,7 +71,8 @@ namespace DecentraCloud.API.Controllers
         [Authorize]
         public async Task<IActionResult> GetAllNodes()
         {
-            var nodes = await _nodeService.GetAllNodes();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var nodes = await _nodeService.GetNodesByUser(userId);
             return Ok(nodes);
         }
     }

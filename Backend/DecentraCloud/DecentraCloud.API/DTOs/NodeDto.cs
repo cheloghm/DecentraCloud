@@ -7,6 +7,5 @@
         public string Endpoint { get; set; }
         public bool IsOnline { get; set; }
         public long Storage { get; set; }
-        // Add other non-sensitive fields if necessary
     }
 }

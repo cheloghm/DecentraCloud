@@ -3,11 +3,11 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -17,7 +17,6 @@ namespace DecentraCloud.API.Services
         private readonly INodeRepository _nodeRepository;
         private readonly IUserRepository _userRepository;
         private readonly TokenHelper _tokenHelper;
-        private readonly HttpClient _httpClient;
         private readonly EncryptionHelper _encryptionHelper;
 
         public NodeService(INodeRepository nodeRepository, IUserRepository userRepository, TokenHelper tokenHelper, EncryptionHelper encryptionHelper)
@@ -25,11 +24,15 @@ namespace DecentraCloud.API.Services
             _nodeRepository = nodeRepository;
             _userRepository = userRepository;
             _tokenHelper = tokenHelper;
-            _httpClient = new HttpClient(new HttpClientHandler
+            _encryptionHelper = encryptionHelper;
+        }
+
+        private HttpClient CreateHttpClient()
+        {
+            return new HttpClient(new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             });
-            _encryptionHelper = encryptionHelper;
         }
 
         public async Task<Node> RegisterNode(NodeRegistrationDto nodeRegistrationDto)
@@ -114,8 +117,9 @@ namespace DecentraCloud.API.Services
                 return 0;
             }
 
+            var httpClient = CreateHttpClient();
             var url = $"{node.Endpoint}/file-size/{filename}";
-            var response = await _httpClient.GetAsync(url);
+            var response = await httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
                 return 0;
@@ -133,6 +137,7 @@ namespace DecentraCloud.API.Services
                 return false;
             }
 
+            var httpClient = CreateHttpClient();
             var url = $"{node.Endpoint}/storage/upload";
             var content = new MultipartFormDataContent();
             var fileContent = new ByteArrayContent(fileUploadDto.Data);
@@ -146,7 +151,7 @@ namespace DecentraCloud.API.Services
             };
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", node.Token);
 
-            var response = await _httpClient.SendAsync(request);
+            var response = await httpClient.SendAsync(request);
             var responseBody = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"Response: {response.StatusCode}, Body: {responseBody}");
             return response.IsSuccessStatusCode;
@@ -180,6 +185,11 @@ namespace DecentraCloud.API.Services
         public async Task<IEnumerable<Node>> GetNodesByUser(string userId)
         {
             return await _nodeRepository.GetNodesByUser(userId);
+        }
+
+        public async Task<Node> GetNodeById(string nodeId)
+        {
+            return await _nodeRepository.GetNodeById(nodeId);
         }
 
         public async Task<bool> UpdateNode(Node node)
