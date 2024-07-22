@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import authService from '../services/authService';
 
 const UserProfileForm = ({ username: initialUsername, email: initialEmail, onUpdateUser, onDelete }) => {
@@ -8,7 +8,26 @@ const UserProfileForm = ({ username: initialUsername, email: initialEmail, onUpd
     receiveNewsletter: false,
     theme: 'light',
   });
+  const [allocatedStorage, setAllocatedStorage] = useState(0);
+  const [usedStorage, setUsedStorage] = useState(0);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const userDetails = await authService.getUserDetails();
+        setUsername(userDetails.username);
+        setEmail(userDetails.email);
+        setSettings(userDetails.settings);
+        setAllocatedStorage(userDetails.allocatedStorage);
+        setUsedStorage(userDetails.usedStorage);
+      } catch (error) {
+        setMessage('Failed to fetch user details');
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,6 +64,19 @@ const UserProfileForm = ({ username: initialUsername, email: initialEmail, onUpd
     });
   };
 
+  const calculateStoragePercentage = () => {
+    return (usedStorage / allocatedStorage) * 100;
+  };
+
+  const getStorageBarColor = () => {
+    const percentage = calculateStoragePercentage();
+    if (percentage <= 50) return { used: 'blue', free: 'green' };
+    if (percentage > 50 && percentage < 70) return { used: 'blue', free: 'amber' };
+    return { used: 'blue', free: 'red' };
+  };
+
+  const storageBarColors = getStorageBarColor();
+
   return (
     <form onSubmit={handleSubmit}>
       <h2>Profile</h2>
@@ -80,6 +112,13 @@ const UserProfileForm = ({ username: initialUsername, email: initialEmail, onUpd
           <option value="dark">Dark</option>
         </select>
       </label>
+      <div style={{ marginTop: '20px' }}>
+        <h3>Storage</h3>
+        <div style={{ width: '100%', height: '30px', backgroundColor: storageBarColors.free, position: 'relative', borderRadius: '5px' }}>
+          <div style={{ width: `${calculateStoragePercentage()}%`, height: '100%', backgroundColor: storageBarColors.used, borderRadius: '5px 0 0 5px' }}></div>
+        </div>
+        <p>Used: {usedStorage} / {allocatedStorage} bytes</p>
+      </div>
       <button type="submit">Update</button>
       <button type="button" onClick={handleDelete} style={{ backgroundColor: 'red', color: 'white' }}>Delete Profile</button>
     </form>
