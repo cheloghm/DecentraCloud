@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using DecentraCloud.API.DTOs;
 using System.Threading.Tasks;
-using DecentraCloud.API.DTOs;
-using DecentraCloud.API.Models;
 
 namespace DecentraCloud.API.Interfaces.ServiceInterfaces
 {

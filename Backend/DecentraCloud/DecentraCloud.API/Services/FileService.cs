@@ -3,7 +3,6 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
-using System;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -28,8 +27,12 @@ namespace DecentraCloud.API.Services
             // Encrypt the file data before upload
             fileUploadDto.Data = _encryptionHelper.Encrypt(fileUploadDto.Data);
 
-            // Randomly select a node
-            var node = await _nodeService.GetRandomNode();
+            // Randomly select a node that is online and has a valid endpoint
+            var node = await _nodeService.GetRandomOnlineNode();
+            if (node == null)
+            {
+                return new FileOperationResult { Success = false, Message = "No available nodes for upload." };
+            }
             fileUploadDto.NodeId = node.Id;
 
             // Add file record to the database first to generate the file ID

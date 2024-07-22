@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -157,10 +156,10 @@ namespace DecentraCloud.API.Services
             return response.IsSuccessStatusCode;
         }
 
-        private async Task<Node> GetRandomOnlineNode()
+        public async Task<Node> GetRandomOnlineNode()
         {
             var nodes = await _nodeRepository.GetAllNodes();
-            var onlineNodes = nodes.Where(n => n.IsOnline).ToList();
+            var onlineNodes = nodes.Where(n => n.IsOnline && !string.IsNullOrEmpty(n.Endpoint)).ToList();
             if (!onlineNodes.Any())
             {
                 return null;
