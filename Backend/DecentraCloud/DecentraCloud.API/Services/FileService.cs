@@ -3,6 +3,12 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -20,6 +26,16 @@ namespace DecentraCloud.API.Services
             _fileRepository = fileRepository;
             _userRepository = userRepository;
             _encryptionHelper = encryptionHelper;
+        }
+
+        private HttpClient CreateHttpClient()
+        {
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
+            };
+
+            return new HttpClient(handler);
         }
 
         public async Task<FileOperationResult> UploadFile(FileUploadDto fileUploadDto)
@@ -62,6 +78,75 @@ namespace DecentraCloud.API.Services
             }
 
             return new FileOperationResult { Success = result, Message = result ? "File uploaded successfully" : "File upload failed" };
+        }
+
+        public async Task<IEnumerable<FileRecord>> GetAllFiles(string userId)
+        {
+            return await _fileRepository.GetFilesByUserId(userId);
+        }
+
+        public async Task<byte[]> ViewFile(string userId, string fileId)
+        {
+            var fileRecord = await _fileRepository.GetFileRecordById(fileId);
+            if (fileRecord == null || fileRecord.UserId != userId)
+            {
+                return null;
+            }
+
+            var node = await _nodeService.GetNodeById(fileRecord.NodeId);
+            if (node == null || !node.IsOnline || string.IsNullOrEmpty(node.Endpoint))
+            {
+                return null;
+            }
+
+            var httpClient = CreateHttpClient();
+            var url = $"{node.Endpoint}/storage/view/{userId}/{fileId}";
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", node.Token);
+            var response = await httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+
+        public async Task<FileContentDto> DownloadFile(string userId, string fileId)
+        {
+            var fileRecord = await _fileRepository.GetFileRecordById(fileId);
+            if (fileRecord == null || fileRecord.UserId != userId)
+            {
+                return null;
+            }
+
+            var node = await _nodeService.GetNodeById(fileRecord.NodeId);
+            if (node == null || !node.IsOnline || string.IsNullOrEmpty(node.Endpoint))
+            {
+                return null;
+            }
+
+            var httpClient = CreateHttpClient();
+            var url = $"{node.Endpoint}/storage/download/{userId}/{fileId}";
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", node.Token);
+            var response = await httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var fileContent = await response.Content.ReadAsByteArrayAsync();
+            return new FileContentDto
+            {
+                Filename = fileRecord.Filename,
+                Content = fileContent
+            };
+        }
+
+        public async Task<FileRecord> GetFile(string fileId)
+        {
+            return await _fileRepository.GetFileRecordById(fileId);
         }
     }
 }

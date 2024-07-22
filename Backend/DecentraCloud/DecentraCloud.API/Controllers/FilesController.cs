@@ -5,6 +5,7 @@ using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -57,6 +58,72 @@ namespace DecentraCloud.API.Controllers
             }
 
             return BadRequest(result);
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllFiles()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found." });
+            }
+
+            var files = await _fileService.GetAllFiles(userId);
+            return Ok(files);
+        }
+
+        [HttpGet("view/{fileId}")]
+        public async Task<IActionResult> ViewFile(string fileId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found." });
+            }
+
+            var fileContent = await _fileService.ViewFile(userId, fileId);
+
+            if (fileContent == null)
+            {
+                return NotFound(new { message = "File not found." });
+            }
+
+            return File(fileContent, "application/octet-stream");
+        }
+
+        [HttpGet("download/{fileId}")]
+        public async Task<IActionResult> DownloadFile(string fileId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found." });
+            }
+
+            var fileDownloadDto = await _fileService.DownloadFile(userId, fileId);
+
+            if (fileDownloadDto == null)
+            {
+                return NotFound(new { message = "File not found." });
+            }
+
+            return File(fileDownloadDto.Content, "application/octet-stream", fileDownloadDto.Filename);
+        }
+
+        [HttpGet("{fileId}")]
+        public async Task<IActionResult> GetFile(string fileId)
+        {
+            var fileRecord = await _fileService.GetFile(fileId);
+            if (fileRecord == null)
+            {
+                return NotFound(new { message = "File not found." });
+            }
+
+            return Ok(fileRecord);
         }
     }
 }

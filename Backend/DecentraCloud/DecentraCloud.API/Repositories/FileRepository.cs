@@ -25,7 +25,7 @@ namespace DecentraCloud.API.Repositories
         {
             var filter = Builders<FileRecord>.Filter.And(
                 Builders<FileRecord>.Filter.Eq(f => f.UserId, userId),
-                Builders<FileRecord>.Filter.Eq(f => f.Filename, filename)
+                Builders<FileRecord>.Filter.Eq(f => f.Id, filename)
             );
             return await _context.Files.Find(filter).FirstOrDefaultAsync();
         }
@@ -43,7 +43,7 @@ namespace DecentraCloud.API.Repositories
         {
             var filter = Builders<FileRecord>.Filter.And(
                 Builders<FileRecord>.Filter.Eq(f => f.UserId, userId),
-                Builders<FileRecord>.Filter.Eq(f => f.Filename, filename)
+                Builders<FileRecord>.Filter.Eq(f => f.Id, filename)
             );
             var result = await _context.Files.DeleteOneAsync(filter);
             return result.DeletedCount > 0;
@@ -54,9 +54,10 @@ namespace DecentraCloud.API.Repositories
             return await _context.Files.Find(f => f.UserId == userId).ToListAsync();
         }
 
-        public async Task<FileRecord> GetFileByFilename(string filename)
+        public async Task<FileRecord> GetFileRecordById(string fileId)
         {
-            return await _context.Files.Find(f => f.Filename == filename).FirstOrDefaultAsync();
+            var filter = Builders<FileRecord>.Filter.Eq(f => f.Id, fileId);
+            return await _context.Files.Find(filter).FirstOrDefaultAsync();
         }
     }
 }
