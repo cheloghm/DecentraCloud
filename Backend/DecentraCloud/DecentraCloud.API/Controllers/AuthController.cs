@@ -85,7 +85,9 @@ namespace DecentraCloud.API.Controllers
                 {
                     ReceiveNewsletter = false, // Default value
                     Theme = "light" // Default value
-                }
+                },
+                AllocatedStorage = user.AllocatedStorage,
+                UsedStorage = user.UsedStorage
             };
 
             return Ok(userDetailsDto);
@@ -123,6 +125,5 @@ namespace DecentraCloud.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-
     }
 }
