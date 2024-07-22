@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace DecentraCloud.API.Controllers
 {
@@ -84,6 +85,12 @@ namespace DecentraCloud.API.Controllers
                 return Unauthorized(new { message = "User ID not found." });
             }
 
+            var fileRecord = await _fileService.GetFile(fileId);
+            if (fileRecord == null || fileRecord.UserId != userId)
+            {
+                return NotFound(new { message = "File not found." });
+            }
+
             var fileContent = await _fileService.ViewFile(userId, fileId);
 
             if (fileContent == null)
@@ -91,7 +98,15 @@ namespace DecentraCloud.API.Controllers
                 return NotFound(new { message = "File not found." });
             }
 
-            return File(fileContent, "application/octet-stream");
+            // Determine the MIME type based on the file extension
+            var provider = new FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(fileRecord.Filename, out var contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+
+            // Return the decrypted content directly
+            return File(fileContent, contentType);
         }
 
         [HttpGet("download/{fileId}")]
@@ -111,6 +126,7 @@ namespace DecentraCloud.API.Controllers
                 return NotFound(new { message = "File not found." });
             }
 
+            // Return the decrypted content with the original filename
             return File(fileDownloadDto.Content, "application/octet-stream", fileDownloadDto.Filename);
         }
 

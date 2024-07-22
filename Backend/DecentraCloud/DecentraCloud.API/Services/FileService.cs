@@ -109,8 +109,10 @@ namespace DecentraCloud.API.Services
                 return null;
             }
 
-            return await response.Content.ReadAsByteArrayAsync();
+            var encryptedContent = await response.Content.ReadAsByteArrayAsync();
+            return _encryptionHelper.Decrypt(encryptedContent);
         }
+
 
         public async Task<FileContentDto> DownloadFile(string userId, string fileId)
         {
@@ -136,11 +138,12 @@ namespace DecentraCloud.API.Services
                 return null;
             }
 
-            var fileContent = await response.Content.ReadAsByteArrayAsync();
+            var encryptedContent = await response.Content.ReadAsByteArrayAsync();
+            var decryptedContent = _encryptionHelper.Decrypt(encryptedContent);
             return new FileContentDto
             {
                 Filename = fileRecord.Filename,
-                Content = fileContent
+                Content = decryptedContent
             };
         }
 
