@@ -28,35 +28,33 @@ namespace DecentraCloud.API.Services
             // Encrypt the file data before upload
             fileUploadDto.Data = _encryptionHelper.Encrypt(fileUploadDto.Data);
 
-            // Generate UUID for the file
-            var uuid = Guid.NewGuid().ToString();
-            fileUploadDto.Uuid = uuid;
-
             // Randomly select a node
             var node = await _nodeService.GetRandomNode();
             fileUploadDto.NodeId = node.Id;
 
-            // Set the filename to UUID for storage node
+            // Add file record to the database first to generate the file ID
+            var fileRecord = new FileRecord
+            {
+                UserId = fileUploadDto.UserId,
+                Filename = fileUploadDto.Filename, // Original filename
+                NodeId = fileUploadDto.NodeId,
+                Size = fileUploadDto.Data.Length
+            };
+            await _fileRepository.AddFileRecord(fileRecord);
+
+            // Use the generated file ID as the filename for the storage node
+            var fileId = fileRecord.Id;
+
             var result = await _nodeService.UploadFileToNode(new FileUploadDto
             {
                 UserId = fileUploadDto.UserId,
-                Filename = uuid, // UUID used as filename on storage node
+                Filename = fileId, // Use file ID as filename on storage node
                 Data = fileUploadDto.Data,
                 NodeId = fileUploadDto.NodeId
             });
 
             if (result)
             {
-                // Store the original filename in the database
-                await _fileRepository.AddFileRecord(new FileRecord
-                {
-                    UserId = fileUploadDto.UserId,
-                    Filename = fileUploadDto.Filename, // Original filename
-                    NodeId = fileUploadDto.NodeId,
-                    Size = fileUploadDto.Data.Length,
-                    Uuid = uuid // UUID
-                });
-
                 await _userRepository.UpdateUserStorageUsage(fileUploadDto.UserId, fileUploadDto.Data.Length);
             }
 
