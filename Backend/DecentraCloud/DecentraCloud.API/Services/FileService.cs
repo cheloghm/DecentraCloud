@@ -57,7 +57,8 @@ namespace DecentraCloud.API.Services
                 UserId = fileUploadDto.UserId,
                 Filename = fileUploadDto.Filename, // Original filename
                 NodeId = fileUploadDto.NodeId,
-                Size = fileUploadDto.Data.Length
+                Size = fileUploadDto.Data.Length,
+                DateAdded = DateTime.UtcNow
             };
             await _fileRepository.AddFileRecord(fileRecord);
 

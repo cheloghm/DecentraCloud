@@ -12,5 +12,6 @@ namespace DecentraCloud.API.Models
         public string Filename { get; set; }
         public string NodeId { get; set; }
         public long Size { get; set; }
+        public DateTime DateAdded { get; set; }
     }
 }
