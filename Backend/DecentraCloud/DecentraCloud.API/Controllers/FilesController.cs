@@ -84,29 +84,20 @@ namespace DecentraCloud.API.Controllers
             {
                 return Unauthorized(new { message = "User ID not found." });
             }
-
             var fileRecord = await _fileService.GetFile(fileId);
+
             if (fileRecord == null || fileRecord.UserId != userId)
             {
-                return NotFound(new { message = "File not found." });
+                return NotFound();
             }
 
-            var fileContent = await _fileService.ViewFile(userId, fileId);
-
-            if (fileContent == null)
+            var content = await _fileService.ViewFile(userId, fileId);
+            if (content == null)
             {
-                return NotFound(new { message = "File not found." });
+                return BadRequest("Unable to view file.");
             }
 
-            // Determine the MIME type based on the file extension
-            var provider = new FileExtensionContentTypeProvider();
-            if (!provider.TryGetContentType(fileRecord.Filename, out var contentType))
-            {
-                contentType = "application/octet-stream";
-            }
-
-            // Return the decrypted content directly
-            return File(fileContent, contentType);
+            return File(content, fileRecord.MimeType, fileRecord.Filename);
         }
 
         [HttpGet("download/{fileId}")]

@@ -3,6 +3,7 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
+using HeyRed.Mime;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -21,6 +22,11 @@ namespace DecentraCloud.API.Services
             _fileRepository = fileRepository;
             _userRepository = userRepository;
             _encryptionHelper = encryptionHelper;
+        }
+
+        private string GetMimeType(string filename)
+        {
+            return MimeTypesMap.GetMimeType(filename);
         }
 
         public async Task<FileOperationResult> UploadFile(FileUploadDto fileUploadDto)
@@ -43,6 +49,7 @@ namespace DecentraCloud.API.Services
                 Filename = fileUploadDto.Filename, // Original filename
                 NodeId = fileUploadDto.NodeId,
                 Size = fileUploadDto.Data.Length,
+                MimeType = GetMimeType(fileUploadDto.Filename), // Set MIME type
                 DateAdded = DateTime.UtcNow
             };
             await _fileRepository.AddFileRecord(fileRecord);
