@@ -3,12 +3,7 @@ using DecentraCloud.API.Helpers;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Interfaces.ServiceInterfaces;
 using DecentraCloud.API.Models;
-using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
 using System.Threading.Tasks;
 
 namespace DecentraCloud.API.Services
@@ -26,16 +21,6 @@ namespace DecentraCloud.API.Services
             _fileRepository = fileRepository;
             _userRepository = userRepository;
             _encryptionHelper = encryptionHelper;
-        }
-
-        private HttpClient CreateHttpClient()
-        {
-            var handler = new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
-            };
-
-            return new HttpClient(handler);
         }
 
         public async Task<FileOperationResult> UploadFile(FileUploadDto fileUploadDto)
@@ -65,13 +50,13 @@ namespace DecentraCloud.API.Services
             // Use the generated file ID as the filename for the storage node
             var fileId = fileRecord.Id;
 
-            var result = await _nodeService.UploadFileToNode(new FileUploadDto
+            var result = await _fileRepository.UploadFileToNode(new FileUploadDto
             {
                 UserId = fileUploadDto.UserId,
                 Filename = fileId, // Use file ID as filename on storage node
                 Data = fileUploadDto.Data,
                 NodeId = fileUploadDto.NodeId
-            });
+            }, node);
 
             if (result)
             {
@@ -100,20 +85,9 @@ namespace DecentraCloud.API.Services
                 return null;
             }
 
-            var httpClient = CreateHttpClient();
-            var url = $"{node.Endpoint}/storage/view/{userId}/{fileId}";
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", node.Token);
-            var response = await httpClient.GetAsync(url);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return null;
-            }
-
-            var encryptedContent = await response.Content.ReadAsByteArrayAsync();
+            var encryptedContent = await _fileRepository.ViewFileOnNode(userId, fileId, node);
             return _encryptionHelper.Decrypt(encryptedContent);
         }
-
 
         public async Task<FileContentDto> DownloadFile(string userId, string fileId)
         {
@@ -129,17 +103,7 @@ namespace DecentraCloud.API.Services
                 return null;
             }
 
-            var httpClient = CreateHttpClient();
-            var url = $"{node.Endpoint}/storage/download/{userId}/{fileId}";
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", node.Token);
-            var response = await httpClient.GetAsync(url);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return null;
-            }
-
-            var encryptedContent = await response.Content.ReadAsByteArrayAsync();
+            var encryptedContent = await _fileRepository.DownloadFileFromNode(userId, fileId, node);
             var decryptedContent = _encryptionHelper.Decrypt(encryptedContent);
             return new FileContentDto
             {
