@@ -112,5 +112,14 @@ namespace DecentraCloud.API.Repositories
 
             return await response.Content.ReadAsByteArrayAsync();
         }
+
+        public async Task<IEnumerable<FileRecord>> SearchFileRecords(string userId, string query)
+        {
+            var filter = Builders<FileRecord>.Filter.And(
+                Builders<FileRecord>.Filter.Eq(f => f.UserId, userId),
+                Builders<FileRecord>.Filter.Regex(f => f.Filename, new MongoDB.Bson.BsonRegularExpression(query, "i"))
+            );
+            return await _context.Files.Find(filter).ToListAsync();
+        }
     }
 }

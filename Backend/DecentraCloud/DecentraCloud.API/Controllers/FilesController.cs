@@ -132,5 +132,19 @@ namespace DecentraCloud.API.Controllers
 
             return Ok(fileRecord);
         }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchFiles([FromQuery] string query)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found." });
+            }
+
+            var files = await _fileService.SearchFiles(userId, query);
+            return Ok(files);
+        }
     }
 }

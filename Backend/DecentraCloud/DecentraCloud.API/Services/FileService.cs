@@ -123,5 +123,10 @@ namespace DecentraCloud.API.Services
         {
             return await _fileRepository.GetFileRecordById(fileId);
         }
+
+        public async Task<IEnumerable<FileRecord>> SearchFiles(string userId, string query)
+        {
+            return await _fileRepository.SearchFileRecords(userId, query);
+        }
     }
 }

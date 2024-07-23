@@ -17,5 +17,6 @@ namespace DecentraCloud.API.Interfaces.RepositoryInterfaces
         Task<bool> UploadFileToNode(FileUploadDto fileUploadDto, Node node);
         Task<byte[]> DownloadFileFromNode(string userId, string fileId, Node node);
         Task<byte[]> ViewFileOnNode(string userId, string fileId, Node node);
+        Task<IEnumerable<FileRecord>> SearchFileRecords(string userId, string query);
     }
 }

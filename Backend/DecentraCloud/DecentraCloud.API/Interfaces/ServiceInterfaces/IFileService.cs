@@ -12,5 +12,6 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
         Task<byte[]> ViewFile(string userId, string fileId);
         Task<FileContentDto> DownloadFile(string userId, string fileId);
         Task<FileRecord> GetFile(string fileId);
+        Task<IEnumerable<FileRecord>> SearchFiles(string userId, string query);
     }
 }
