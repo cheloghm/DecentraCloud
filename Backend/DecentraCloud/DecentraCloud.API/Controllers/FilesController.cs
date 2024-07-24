@@ -146,5 +146,25 @@ namespace DecentraCloud.API.Controllers
             var files = await _fileService.SearchFiles(userId, query);
             return Ok(files);
         }
+
+        [HttpDelete("{fileId}")]
+        public async Task<IActionResult> DeleteFile(string fileId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found." });
+            }
+
+            var result = await _fileService.DeleteFile(userId, fileId);
+
+            if (!result)
+            {
+                return NotFound(new { message = "File not found or deletion failed." });
+            }
+
+            return NoContent();
+        }
     }
 }

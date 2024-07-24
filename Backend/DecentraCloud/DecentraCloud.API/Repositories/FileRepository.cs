@@ -2,11 +2,14 @@
 using DecentraCloud.API.DTOs;
 using DecentraCloud.API.Interfaces.RepositoryInterfaces;
 using DecentraCloud.API.Models;
+using MongoDB.Bson.IO;
 using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace DecentraCloud.API.Repositories
 {
@@ -17,6 +20,16 @@ namespace DecentraCloud.API.Repositories
         public FileRepository(DecentraCloudContext context)
         {
             _context = context;
+        }
+
+        private HttpClient CreateHttpClient()
+        {
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
+            };
+
+            return new HttpClient(handler);
         }
 
         public async Task AddFileRecord(FileRecord fileRecord)
@@ -51,16 +64,6 @@ namespace DecentraCloud.API.Repositories
             );
             var result = await _context.Files.DeleteOneAsync(filter);
             return result.DeletedCount > 0;
-        }
-
-        private HttpClient CreateHttpClient()
-        {
-            var handler = new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
-            };
-
-            return new HttpClient(handler);
         }
 
         public async Task<bool> UploadFileToNode(FileUploadDto fileUploadDto, Node node)
@@ -121,5 +124,25 @@ namespace DecentraCloud.API.Repositories
             );
             return await _context.Files.Find(filter).ToListAsync();
         }
+
+        public async Task<bool> DeleteFileRecordById(string fileId)
+        {
+            var filter = Builders<FileRecord>.Filter.Eq(f => f.Id, fileId);
+            var result = await _context.Files.DeleteOneAsync(filter);
+            return result.DeletedCount > 0;
+        }
+
+        public async Task<bool> DeleteFileFromNode(string userId, string fileId, Node node)
+        {
+            var httpClient = CreateHttpClient();
+            var url = $"{node.Endpoint}/storage/delete";
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", node.Token);
+
+            var content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(new { userId, filename = fileId }), Encoding.UTF8, "application/json");
+            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Delete, url) { Content = content });
+
+            return response.IsSuccessStatusCode;
+        }
+
     }
 }

@@ -128,5 +128,31 @@ namespace DecentraCloud.API.Services
         {
             return await _fileRepository.SearchFileRecords(userId, query);
         }
+
+        public async Task<bool> DeleteFile(string userId, string fileId)
+        {
+            var fileRecord = await _fileRepository.GetFileRecordById(fileId);
+
+            if (fileRecord == null || fileRecord.UserId != userId)
+            {
+                return false;
+            }
+
+            var node = await _nodeService.GetNodeById(fileRecord.NodeId);
+
+            if (node == null)
+            {
+                return false;
+            }
+
+            var result = await _fileRepository.DeleteFileFromNode(userId, fileId, node);
+
+            if (!result)
+            {
+                return false;
+            }
+
+            return await _fileRepository.DeleteFileRecordById(fileId);
+        }
     }
 }
