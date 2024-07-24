@@ -129,30 +129,46 @@ namespace DecentraCloud.API.Services
             return await _fileRepository.SearchFileRecords(userId, query);
         }
 
-        public async Task<bool> DeleteFile(string userId, string fileId)
+        public async Task<bool> DeleteFile(string fileId, string userId)
         {
             var fileRecord = await _fileRepository.GetFileRecordById(fileId);
-
             if (fileRecord == null || fileRecord.UserId != userId)
             {
                 return false;
             }
 
+            // Delete file from storage node
             var node = await _nodeService.GetNodeById(fileRecord.NodeId);
-
             if (node == null)
             {
                 return false;
             }
 
-            var result = await _fileRepository.DeleteFileFromNode(userId, fileId, node);
-
-            if (!result)
+            var deleteSuccess = await _fileRepository.DeleteFileFromNode(userId, fileId, node);
+            if (!deleteSuccess)
             {
                 return false;
             }
 
-            return await _fileRepository.DeleteFileRecordById(fileId);
+            // Delete file record from database
+            var dbDeleteSuccess = await _fileRepository.DeleteFileRecord(userId, fileRecord.Filename);
+            if (!dbDeleteSuccess)
+            {
+                return false;
+            }
+
+            // Update user's used storage
+            var user = await _userRepository.GetUserById(userId);
+            if (user == null)
+            {
+                return false;
+            }
+
+            user.UsedStorage -= fileRecord.Size;
+            await _userRepository.UpdateUser(user);
+
+            return true;
         }
+
     }
 }
