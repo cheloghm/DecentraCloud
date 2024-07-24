@@ -15,5 +15,6 @@ namespace DecentraCloud.API.Models
         public long Size { get; set; }
         public string MimeType { get; set; }
         public DateTime DateAdded { get; set; }
+        public List<string> SharedWith { get; set; } = new List<string>();
     }
 }

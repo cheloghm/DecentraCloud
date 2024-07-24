@@ -170,5 +170,21 @@ namespace DecentraCloud.API.Services
             return true;
         }
 
+        public async Task<bool> ShareFile(string fileId, string emailToShareWith)
+        {
+            var userToShareWith = await _userRepository.GetUserByEmail(emailToShareWith);
+            if (userToShareWith == null)
+            {
+                return false;
+            }
+
+            return await _fileRepository.ShareFile(fileId, userToShareWith.Id);
+        }
+
+        public async Task<IEnumerable<FileRecord>> GetFilesSharedWithUser(string userId)
+        {
+            return await _fileRepository.GetFilesSharedWithUser(userId);
+        }
+
     }
 }
