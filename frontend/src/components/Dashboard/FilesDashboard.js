@@ -8,8 +8,6 @@ const { apiUrl } = config;
 
 const FilesDashboard = () => {
   const [files, setFiles] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
   const [fileContentType, setFileContentType] = useState('');
@@ -17,18 +15,11 @@ const FilesDashboard = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [message, setMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchFiles();
   }, []);
-
-  useEffect(() => {
-    if (searchQuery) {
-      searchFiles();
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery]);
 
   const fetchFiles = async () => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -41,21 +32,6 @@ const FilesDashboard = () => {
       setFiles(response.data);
     } catch (error) {
       console.error('Failed to fetch files:', error);
-    }
-  };
-
-  const searchFiles = async () => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) return;
-
-    try {
-      const response = await axios.get(`${apiUrl}/file/search`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-        params: { query: searchQuery },
-      });
-      setSearchResults(response.data);
-    } catch (error) {
-      console.error('Failed to search files:', error);
     }
   };
 
@@ -151,6 +127,45 @@ const FilesDashboard = () => {
     }
   };
 
+  const handleDelete = async (fileId) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    const confirmDelete = window.confirm('Are you sure you want to delete this file?');
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${apiUrl}/file/delete/${fileId}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setMessage('File deleted successfully');
+      setShowFileModal(false);
+      fetchFiles(); // Refresh files after deletion
+    } catch (error) {
+      setMessage('Failed to delete file: ' + error.response.data.message);
+    }
+  };
+
+  const handleSearchChange = async (e) => {
+    setSearchQuery(e.target.value);
+    if (e.target.value === '') {
+      fetchFiles();
+    } else {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user) return;
+
+      try {
+        const response = await axios.get(`${apiUrl}/file/search`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+          params: { query: e.target.value },
+        });
+        setFiles(response.data);
+      } catch (error) {
+        console.error('Failed to search files:', error);
+      }
+    }
+  };
+
   const renderFileContent = () => {
     if (fileContentType.startsWith('image/')) {
       return <img src={fileContent} alt="file content" style={styles.fileContent} />;
@@ -167,22 +182,18 @@ const FilesDashboard = () => {
     return <pre>{fileContent}</pre>;
   };
 
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
   return (
     <div>
       <h1>Files Dashboard</h1>
-      <div style={styles.header}>
-        <button onClick={() => setShowUploadModal(true)} style={styles.uploadButton}>Upload File</button>
+      <div style={styles.topBar}>
         <input
           type="text"
           placeholder="Search files..."
           value={searchQuery}
           onChange={handleSearchChange}
-          style={styles.searchBar}
+          style={styles.searchInput}
         />
+        <button onClick={() => setShowUploadModal(true)} style={styles.uploadButton}>Upload File</button>
       </div>
       {showUploadModal && (
         <Modal onClose={() => setShowUploadModal(false)} blurBackground>
@@ -195,7 +206,7 @@ const FilesDashboard = () => {
       )}
       {message && <p>{message}</p>}
       <div style={styles.fileGrid}>
-        {(searchQuery ? searchResults : files).map((file) => (
+        {files.map((file) => (
           <div key={file.id} style={styles.fileCard}>
             <div onClick={() => handleFileClick(file.id)}>
               <p><strong>{file.filename.length > 20 ? `${file.filename.substring(0, 20)}...` : file.filename}</strong></p>
@@ -209,7 +220,7 @@ const FilesDashboard = () => {
         ))}
       </div>
       {showFileModal && (
-        <Modal onClose={() => setShowFileModal(false)}>
+        <Modal onClose={() => setShowFileModal(false)} blurBackground>
           {selectedFile ? (
             <div>
               <h2>File Details</h2>
@@ -218,6 +229,7 @@ const FilesDashboard = () => {
               <p><strong>Added:</strong> {getTimeDifference(selectedFile.dateAdded)}</p>
               <button onClick={() => handleDownload(selectedFile.id)}>Download</button>
               <button onClick={() => handleFileClick(selectedFile.id)}>View</button>
+              <button onClick={() => handleDelete(selectedFile.id)} style={styles.deleteButton}>Delete</button>
             </div>
           ) : (
             renderFileContent()
@@ -229,25 +241,26 @@ const FilesDashboard = () => {
 };
 
 const styles = {
-  header: {
+  topBar: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '10px',
+    marginBottom: '20px',
+  },
+  searchInput: {
+    padding: '10px',
+    width: '200px',
+    borderRadius: '5px',
+    border: '1px solid #ccc',
   },
   uploadButton: {
+    margin: '10px',
     padding: '10px 20px',
     backgroundColor: '#61dafb',
     border: 'none',
     borderRadius: '5px',
     cursor: 'pointer',
     zIndex: 1000,
-  },
-  searchBar: {
-    padding: '10px',
-    borderRadius: '5px',
-    border: '1px solid #ccc',
-    width: '200px',
   },
   fileGrid: {
     display: 'flex',
@@ -270,6 +283,15 @@ const styles = {
   fileContent: {
     maxWidth: '100%',
     maxHeight: '600px',
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    color: 'white',
+    padding: '10px',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginTop: '10px',
   },
 };
 
