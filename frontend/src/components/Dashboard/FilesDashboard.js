@@ -8,6 +8,8 @@ const { apiUrl } = config;
 
 const FilesDashboard = () => {
   const [files, setFiles] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
   const [fileContentType, setFileContentType] = useState('');
@@ -20,6 +22,14 @@ const FilesDashboard = () => {
     fetchFiles();
   }, []);
 
+  useEffect(() => {
+    if (searchQuery) {
+      searchFiles();
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
   const fetchFiles = async () => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) return;
@@ -31,6 +41,21 @@ const FilesDashboard = () => {
       setFiles(response.data);
     } catch (error) {
       console.error('Failed to fetch files:', error);
+    }
+  };
+
+  const searchFiles = async () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    try {
+      const response = await axios.get(`${apiUrl}/file/search`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+        params: { query: searchQuery },
+      });
+      setSearchResults(response.data);
+    } catch (error) {
+      console.error('Failed to search files:', error);
     }
   };
 
@@ -142,10 +167,23 @@ const FilesDashboard = () => {
     return <pre>{fileContent}</pre>;
   };
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <div>
       <h1>Files Dashboard</h1>
-      <button onClick={() => setShowUploadModal(true)} style={styles.uploadButton}>Upload File</button>
+      <div style={styles.header}>
+        <button onClick={() => setShowUploadModal(true)} style={styles.uploadButton}>Upload File</button>
+        <input
+          type="text"
+          placeholder="Search files..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          style={styles.searchBar}
+        />
+      </div>
       {showUploadModal && (
         <Modal onClose={() => setShowUploadModal(false)} blurBackground>
           <div>
@@ -157,7 +195,7 @@ const FilesDashboard = () => {
       )}
       {message && <p>{message}</p>}
       <div style={styles.fileGrid}>
-        {files.map((file) => (
+        {(searchQuery ? searchResults : files).map((file) => (
           <div key={file.id} style={styles.fileCard}>
             <div onClick={() => handleFileClick(file.id)}>
               <p><strong>{file.filename.length > 20 ? `${file.filename.substring(0, 20)}...` : file.filename}</strong></p>
@@ -179,6 +217,7 @@ const FilesDashboard = () => {
               <p><strong>Size:</strong> {selectedFile.size} bytes</p>
               <p><strong>Added:</strong> {getTimeDifference(selectedFile.dateAdded)}</p>
               <button onClick={() => handleDownload(selectedFile.id)}>Download</button>
+              <button onClick={() => handleFileClick(selectedFile.id)}>View</button>
             </div>
           ) : (
             renderFileContent()
@@ -190,14 +229,25 @@ const FilesDashboard = () => {
 };
 
 const styles = {
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '10px',
+  },
   uploadButton: {
-    margin: '10px',
     padding: '10px 20px',
     backgroundColor: '#61dafb',
     border: 'none',
     borderRadius: '5px',
     cursor: 'pointer',
     zIndex: 1000,
+  },
+  searchBar: {
+    padding: '10px',
+    borderRadius: '5px',
+    border: '1px solid #ccc',
+    width: '200px',
   },
   fileGrid: {
     display: 'flex',
