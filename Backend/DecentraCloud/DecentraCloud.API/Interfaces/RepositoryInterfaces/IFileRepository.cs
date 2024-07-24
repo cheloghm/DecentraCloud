@@ -12,12 +12,13 @@ namespace DecentraCloud.API.Interfaces.RepositoryInterfaces
         Task<FileRecord> GetFileRecordById(string fileId);
         Task<IEnumerable<FileRecord>> GetFilesByUserId(string userId);
         Task<bool> DeleteFileRecord(string userId, string filename);
-        Task<bool> ShareFile(string fileId, string userIdToShareWith);
+        Task<bool> ShareFileWithUser(string fileId, string userId);
         Task<IEnumerable<FileRecord>> GetFilesSharedWithUser(string userId);
         Task<bool> UploadFileToNode(FileUploadDto fileUploadDto, Node node);
         Task<byte[]> DownloadFileFromNode(string userId, string fileId, Node node);
         Task<byte[]> ViewFileOnNode(string userId, string fileId, Node node);
         Task<IEnumerable<FileRecord>> SearchFileRecords(string userId, string query);
         Task<bool> DeleteFileFromNode(string userId, string fileId, Node node);
+        Task<bool> UpdateFileRecord(FileRecord fileRecord);
     }
 }

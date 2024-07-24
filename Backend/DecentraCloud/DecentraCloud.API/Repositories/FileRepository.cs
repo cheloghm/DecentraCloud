@@ -144,10 +144,17 @@ namespace DecentraCloud.API.Repositories
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<bool> ShareFile(string fileId, string userIdToShareWith)
+        public async Task<bool> UpdateFileRecord(FileRecord fileRecord)
+        {
+            var filter = Builders<FileRecord>.Filter.Eq(f => f.Id, fileRecord.Id);
+            var result = await _context.Files.ReplaceOneAsync(filter, fileRecord);
+            return result.ModifiedCount > 0;
+        }
+
+        public async Task<bool> ShareFileWithUser(string fileId, string userId)
         {
             var filter = Builders<FileRecord>.Filter.Eq(f => f.Id, fileId);
-            var update = Builders<FileRecord>.Update.AddToSet(f => f.SharedWith, userIdToShareWith);
+            var update = Builders<FileRecord>.Update.AddToSet(f => f.SharedWith, userId);
             var result = await _context.Files.UpdateOneAsync(filter, update);
             return result.ModifiedCount > 0;
         }

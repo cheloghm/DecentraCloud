@@ -167,21 +167,19 @@ namespace DecentraCloud.API.Controllers
             return NoContent();
         }
 
-        /// <summary>
-        /// Share a file with another user.
-        /// </summary>
-        /// <param name="fileId">The ID of the file to share.</param>
-        /// <param name="shareFileDto">The email of the user to share the file with.</param>
         [HttpPost("share/{fileId}")]
-        [SwaggerOperation(Summary = "Share a file with another user.")]
-        [SwaggerResponse(200, "File shared successfully.")]
-        [SwaggerResponse(400, "Failed to share file.")]
         public async Task<IActionResult> ShareFile(string fileId, [FromBody] ShareFileDto shareFileDto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Unauthorized(new { message = "User ID not found." });
+            }
+
+            var isOwner = await _fileService.IsFileOwner(userId, fileId);
+            if (!isOwner)
+            {
+                return Forbid(); // Use Forbid() without arguments
             }
 
             var result = await _fileService.ShareFile(fileId, shareFileDto.Email);
@@ -194,9 +192,6 @@ namespace DecentraCloud.API.Controllers
         }
 
         [HttpGet("shared-with-me")]
-        [SwaggerOperation(Summary = "Get files shared with the authenticated user.")]
-        [SwaggerResponse(200, "Files retrieved successfully.")]
-        [SwaggerResponse(401, "User not authenticated.")]
         public async Task<IActionResult> GetFilesSharedWithMe()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -207,6 +202,31 @@ namespace DecentraCloud.API.Controllers
 
             var files = await _fileService.GetFilesSharedWithUser(userId);
             return Ok(files);
+        }
+
+        [HttpGet("details/{fileId}")]
+        public async Task<IActionResult> GetFileDetails(string fileId)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (userId == null)
+                {
+                    return Unauthorized(new { message = "User ID not found." });
+                }
+
+                var fileDetails = await _fileService.GetFileDetails(fileId, userId);
+                return Ok(fileDetails);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
     }

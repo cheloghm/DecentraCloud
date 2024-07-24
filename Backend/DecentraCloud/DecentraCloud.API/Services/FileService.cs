@@ -170,15 +170,55 @@ namespace DecentraCloud.API.Services
             return true;
         }
 
-        public async Task<bool> ShareFile(string fileId, string emailToShareWith)
+        public async Task<FileRecord> GetFileDetails(string fileId, string userId)
         {
-            var userToShareWith = await _userRepository.GetUserByEmail(emailToShareWith);
-            if (userToShareWith == null)
+            var fileRecord = await _fileRepository.GetFileRecordById(fileId);
+
+            if (fileRecord == null)
+            {
+                throw new Exception("File not found");
+            }
+
+            if (fileRecord.UserId == userId)
+            {
+                // Owner of the file
+                return fileRecord;
+            }
+            else if (fileRecord.SharedWith != null && fileRecord.SharedWith.Contains(userId))
+            {
+                // Shared user
+                return new FileRecord
+                {
+                    Id = fileRecord.Id,
+                    UserId = fileRecord.UserId,
+                    Filename = fileRecord.Filename,
+                    //NodeId = fileRecord.NodeId,
+                    Size = fileRecord.Size,
+                    DateAdded = fileRecord.DateAdded,
+                    SharedWith = new List<string> { fileRecord.UserId }
+                };
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("You do not have access to this file");
+            }
+        }
+
+        public async Task<bool> IsFileOwner(string userId, string fileId)
+        {
+            var fileRecord = await _fileRepository.GetFileRecordById(fileId);
+            return fileRecord != null && fileRecord.UserId == userId;
+        }
+
+        public async Task<bool> ShareFile(string fileId, string email)
+        {
+            var user = await _userRepository.GetUserByEmail(email);
+            if (user == null)
             {
                 return false;
             }
 
-            return await _fileRepository.ShareFile(fileId, userToShareWith.Id);
+            return await _fileRepository.ShareFileWithUser(fileId, user.Id);
         }
 
         public async Task<IEnumerable<FileRecord>> GetFilesSharedWithUser(string userId)
