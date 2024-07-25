@@ -165,5 +165,13 @@ namespace DecentraCloud.API.Repositories
             return await _context.Files.Find(filter).ToListAsync();
         }
 
+        public async Task<bool> RevokeFileShare(string fileId, string userId)
+        {
+            var filter = Builders<FileRecord>.Filter.Eq(f => f.Id, fileId);
+            var update = Builders<FileRecord>.Update.Pull(f => f.SharedWith, userId);
+            var result = await _context.Files.UpdateOneAsync(filter, update);
+            return result.ModifiedCount > 0;
+        }
+
     }
 }

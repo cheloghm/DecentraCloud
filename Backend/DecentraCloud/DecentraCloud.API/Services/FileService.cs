@@ -173,7 +173,7 @@ namespace DecentraCloud.API.Services
         public async Task<FileRecordDto> GetFileDetails(string fileId, string userId)
         {
             var fileRecord = await _fileRepository.GetFileRecordById(fileId);
-            if (fileRecord == null || fileRecord.UserId != userId)
+            if (fileRecord == null || (fileRecord.UserId != userId && !fileRecord.SharedWith.Contains(userId)))
             {
                 return null;
             }
@@ -218,6 +218,33 @@ namespace DecentraCloud.API.Services
         public async Task<IEnumerable<FileRecord>> GetFilesSharedWithUser(string userId)
         {
             return await _fileRepository.GetFilesSharedWithUser(userId);
+        }
+
+        public async Task<bool> RevokeShare(string fileId, string userEmail)
+        {
+            var fileRecord = await _fileRepository.GetFileRecordById(fileId);
+            if (fileRecord == null)
+            {
+                return false; // File not found
+            }
+
+            var user = await _userRepository.GetUserByEmail(userEmail);
+            if (user == null)
+            {
+                return false; // User with the provided email not found
+            }
+
+            if (!fileRecord.SharedWith.Contains(user.Id))
+            {
+                return false; // File is not shared with the user
+            }
+
+            return await _fileRepository.RevokeFileShare(fileId, user.Id);
+        }
+
+        public async Task<FileRecord> GetFileRecordById(string fileId)
+        {
+            return await _fileRepository.GetFileRecordById(fileId);
         }
 
     }

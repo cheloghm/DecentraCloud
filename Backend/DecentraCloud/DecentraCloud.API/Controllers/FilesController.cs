@@ -122,18 +122,6 @@ namespace DecentraCloud.API.Controllers
             return File(fileDownloadDto.Content, "application/octet-stream", fileDownloadDto.Filename);
         }
 
-        [HttpGet("{fileId}")]
-        public async Task<IActionResult> GetFile(string fileId)
-        {
-            var fileRecord = await _fileService.GetFile(fileId);
-            if (fileRecord == null)
-            {
-                return NotFound(new { message = "File not found." });
-            }
-
-            return Ok(fileRecord);
-        }
-
         [HttpGet("search")]
         public async Task<IActionResult> SearchFiles([FromQuery] string query)
         {
@@ -204,7 +192,7 @@ namespace DecentraCloud.API.Controllers
             return Ok(files);
         }
 
-        [HttpGet("{fileId}")]
+        [HttpGet("Details/{fileId}")]
         public async Task<IActionResult> GetFileDetails(string fileId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -222,5 +210,28 @@ namespace DecentraCloud.API.Controllers
             return Ok(fileDetails);
         }
 
+        [HttpPost("revoke/{fileId}")]
+        public async Task<IActionResult> RevokeShare(string fileId, [FromBody] RevokeShareDto request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found." });
+            }
+
+            var fileRecord = await _fileService.GetFileRecordById(fileId);
+            if (fileRecord.UserId != userId)
+            {
+                return Unauthorized(new { message = "Only the owner can revoke share." });
+            }
+
+            var result = await _fileService.RevokeShare(fileId, request.UserEmail);
+            if (!result)
+            {
+                return BadRequest(new { message = "Failed to revoke share or access denied." });
+            }
+
+            return Ok(new { message = "File share revoked successfully." });
+        }
     }
 }
