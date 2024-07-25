@@ -16,6 +16,7 @@ const FilesDashboard = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [shareEmail, setShareEmail] = useState('');
 
   useEffect(() => {
     fetchFiles();
@@ -95,7 +96,7 @@ const FilesDashboard = () => {
     if (!user) return;
 
     try {
-      const response = await axios.get(`${apiUrl}/file/${fileId}`, {
+      const response = await axios.get(`${apiUrl}/file/details/${fileId}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       setSelectedFile(response.data);
@@ -166,6 +167,23 @@ const FilesDashboard = () => {
     }
   };
 
+  const handleShare = async (fileId) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !shareEmail) return;
+
+    try {
+      const response = await axios.post(`${apiUrl}/file/share/${fileId}`, { email: shareEmail }, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setMessage('File shared successfully');
+      setShareEmail('');
+      // Update file details to reflect shared status
+      handleFileMenuClick(fileId);
+    } catch (error) {
+      setMessage('Failed to share file: ' + error.response.data.message);
+    }
+  };
+
   const renderFileContent = () => {
     if (fileContentType.startsWith('image/')) {
       return <img src={fileContent} alt="file content" style={styles.fileContent} />;
@@ -227,6 +245,20 @@ const FilesDashboard = () => {
               <p><strong>Filename:</strong> {selectedFile.filename.length > 20 ? `${selectedFile.filename.substring(0, 20)}...` : selectedFile.filename}</p>
               <p><strong>Size:</strong> {selectedFile.size} bytes</p>
               <p><strong>Added:</strong> {getTimeDifference(selectedFile.dateAdded)}</p>
+              <p><strong>Shared With:</strong></p>
+              <ul>
+                {selectedFile.sharedWithEmails.map((email, index) => (
+                  <li key={index}>{email}</li>
+                ))}
+              </ul>
+              <input
+                type="email"
+                placeholder="Enter email to share"
+                value={shareEmail}
+                onChange={(e) => setShareEmail(e.target.value)}
+                style={styles.shareInput}
+              />
+              <button onClick={() => handleShare(selectedFile.id)} style={styles.shareButton}>Share</button>
               <button onClick={() => handleDownload(selectedFile.id)}>Download</button>
               <button onClick={() => handleFileClick(selectedFile.id)}>View</button>
               <button onClick={() => handleDelete(selectedFile.id)} style={styles.deleteButton}>Delete</button>
@@ -283,6 +315,22 @@ const styles = {
   fileContent: {
     maxWidth: '100%',
     maxHeight: '600px',
+  },
+  shareInput: {
+    padding: '10px',
+    width: '200px',
+    borderRadius: '5px',
+    border: '1px solid #ccc',
+    margin: '10px 0',
+  },
+  shareButton: {
+    backgroundColor: '#4CAF50',
+    color: 'white',
+    padding: '10px',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginBottom: '10px',
   },
   deleteButton: {
     backgroundColor: 'red',
