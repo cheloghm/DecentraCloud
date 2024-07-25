@@ -1,70 +1,125 @@
-# Getting Started with Create React App
+# DecentraCloud Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
 
-## Available Scripts
+The DecentraCloud Frontend is a React-based application that allows users to interact with the DecentraCloud backend services. Users can upload, view, download, share, and delete files. The frontend provides a user-friendly interface to manage files securely.
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+- **File Upload**: Upload multiple files simultaneously.
+- **File Viewing**: View images, videos, audio files, and PDFs directly in the browser.
+- **File Download**: Download files to the local machine.
+- **File Deletion**: Delete files with confirmation prompts.
+- **File Sharing**: Share files with other users via email.
+- **Share Revocation**: Revoke access to shared files.
+- **Search**: Search files by name.
+- **Responsive Design**: Works on both desktop and mobile devices.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Prerequisites
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Node.js (>= 12.x)
+- npm (>= 6.x)
 
-### `npm test`
+## Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. **Clone the repository**:
+    ```bash
+    git clone https://github.com/your-repo/decentracloud-frontend.git
+    cd decentracloud-frontend
+    ```
 
-### `npm run build`
+2. **Install dependencies**:
+    ```bash
+    npm install
+    ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Configuration
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Create a `config.js` file in the `src` directory with the following content:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```javascript
+const config = {
+  apiUrl: 'http://your-backend-url/api',
+};
 
-### `npm run eject`
+export default config;
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Replace `'http://your-backend-url/api'` with the actual URL of your backend API.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Running the Application
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+To start the development server, run:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+npm start
+```
 
-## Learn More
+This will launch the application in your default web browser at `http://localhost:3000`.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Usage
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### File Upload
 
-### Code Splitting
+1. Click the "Upload File" button.
+2. Select files to upload from your file system.
+3. Click the "Upload" button in the modal to start uploading files.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### File Viewing
 
-### Analyzing the Bundle Size
+1. Click on a file card to view the file content in a modal.
+2. The file content will be displayed based on its type (image, video, audio, PDF, or text).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### File Download
 
-### Making a Progressive Web App
+1. Click on the three-dotted menu next to a file.
+2. Select "Download" to download the file to your local machine.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### File Deletion
 
-### Advanced Configuration
+1. Click on the three-dotted menu next to a file.
+2. Select "Delete" and confirm the deletion.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### File Sharing
 
-### Deployment
+1. Click on the three-dotted menu next to a file.
+2. Enter the email address in the provided input box.
+3. Click "Share" to share the file with the specified user.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Share Revocation
 
-### `npm run build` fails to minify
+1. Click on the three-dotted menu next to a file.
+2. View the list of emails the file is shared with.
+3. Click the "Revoke" button next to the email to revoke access.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Searching Files
+
+1. Enter a search query in the search bar located at the top right of the dashboard.
+2. The file list will update to show files matching the search query.
+
+## Project Structure
+
+- `src/components`: Contains React components.
+  - `Dashboard`: Contains the FilesDashboard component.
+  - `Modal`: Contains the Modal component.
+- `src/config.js`: Configuration file for API endpoints.
+- `src/utils`: Contains utility functions (e.g., `timeUtils.js` for time formatting).
+- `src/styles`: Contains CSS files for styling components.
+
+## Deployment
+
+To build the application for production, run:
+
+```bash
+npm run build
+```
+
+This will create an optimized build of the application in the `build` directory.
+
+## Contributing
+
+We will let you know when contributions are welcomed!
+
+## License
+
+This project is licensed under the MIT License.
