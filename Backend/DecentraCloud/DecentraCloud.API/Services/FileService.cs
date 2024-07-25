@@ -170,38 +170,32 @@ namespace DecentraCloud.API.Services
             return true;
         }
 
-        public async Task<FileRecord> GetFileDetails(string fileId, string userId)
+        public async Task<FileRecordDto> GetFileDetails(string fileId, string userId)
         {
             var fileRecord = await _fileRepository.GetFileRecordById(fileId);
-
-            if (fileRecord == null)
+            if (fileRecord == null || fileRecord.UserId != userId)
             {
-                throw new Exception("File not found");
+                return null;
             }
 
-            if (fileRecord.UserId == userId)
+            var sharedWithEmails = new List<string>();
+            foreach (var sharedUserId in fileRecord.SharedWith)
             {
-                // Owner of the file
-                return fileRecord;
-            }
-            else if (fileRecord.SharedWith != null && fileRecord.SharedWith.Contains(userId))
-            {
-                // Shared user
-                return new FileRecord
+                var user = await _userRepository.GetUserById(sharedUserId);
+                if (user != null)
                 {
-                    Id = fileRecord.Id,
-                    UserId = fileRecord.UserId,
-                    Filename = fileRecord.Filename,
-                    //NodeId = fileRecord.NodeId,
-                    Size = fileRecord.Size,
-                    DateAdded = fileRecord.DateAdded,
-                    SharedWith = new List<string> { fileRecord.UserId }
-                };
+                    sharedWithEmails.Add(user.Email);
+                }
             }
-            else
+
+            return new FileRecordDto
             {
-                throw new UnauthorizedAccessException("You do not have access to this file");
-            }
+                Id = fileRecord.Id,
+                Filename = fileRecord.Filename,
+                Size = fileRecord.Size,
+                DateAdded = fileRecord.DateAdded,
+                SharedWithEmails = sharedWithEmails
+            };
         }
 
         public async Task<bool> IsFileOwner(string userId, string fileId)

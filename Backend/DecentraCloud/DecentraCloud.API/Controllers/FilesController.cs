@@ -204,29 +204,22 @@ namespace DecentraCloud.API.Controllers
             return Ok(files);
         }
 
-        [HttpGet("details/{fileId}")]
+        [HttpGet("{fileId}")]
         public async Task<IActionResult> GetFileDetails(string fileId)
         {
-            try
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                return Unauthorized(new { message = "User ID not found." });
+            }
 
-                if (userId == null)
-                {
-                    return Unauthorized(new { message = "User ID not found." });
-                }
+            var fileDetails = await _fileService.GetFileDetails(fileId, userId);
+            if (fileDetails == null)
+            {
+                return NotFound(new { message = "File not found or access denied." });
+            }
 
-                var fileDetails = await _fileService.GetFileDetails(fileId, userId);
-                return Ok(fileDetails);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            return Ok(fileDetails);
         }
 
     }
