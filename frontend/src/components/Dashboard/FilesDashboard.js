@@ -147,6 +147,38 @@ const FilesDashboard = () => {
     }
   };
 
+  const handleRevoke = async (fileId, userEmail) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    try {
+      const response = await axios.post(`${apiUrl}/file/revoke/${fileId}`, { userEmail }, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setMessage('File share revoked successfully');
+      // Refresh the file details
+      handleFileMenuClick(fileId);
+    } catch (error) {
+      setMessage('Failed to revoke file share: ' + error.response.data.message);
+    }
+  };
+
+  const handleShare = async (fileId, email) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    try {
+      const response = await axios.post(`${apiUrl}/file/share/${fileId}`, { email }, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setMessage('File shared successfully');
+      // Refresh the file details
+      handleFileMenuClick(fileId);
+    } catch (error) {
+      setMessage('Failed to share file: ' + error.response.data.message);
+    }
+  };
+
   const handleSearchChange = async (e) => {
     setSearchQuery(e.target.value);
     if (e.target.value === '') {
@@ -164,23 +196,6 @@ const FilesDashboard = () => {
       } catch (error) {
         console.error('Failed to search files:', error);
       }
-    }
-  };
-
-  const handleShare = async (fileId) => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user || !shareEmail) return;
-
-    try {
-      const response = await axios.post(`${apiUrl}/file/share/${fileId}`, { email: shareEmail }, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setMessage('File shared successfully');
-      setShareEmail('');
-      // Update file details to reflect shared status
-      handleFileMenuClick(fileId);
-    } catch (error) {
-      setMessage('Failed to share file: ' + error.response.data.message);
     }
   };
 
@@ -245,23 +260,25 @@ const FilesDashboard = () => {
               <p><strong>Filename:</strong> {selectedFile.filename.length > 20 ? `${selectedFile.filename.substring(0, 20)}...` : selectedFile.filename}</p>
               <p><strong>Size:</strong> {selectedFile.size} bytes</p>
               <p><strong>Added:</strong> {getTimeDifference(selectedFile.dateAdded)}</p>
-              <p><strong>Shared With:</strong></p>
-              <ul>
-                {selectedFile.sharedWithEmails.map((email, index) => (
-                  <li key={index}>{email}</li>
-                ))}
-              </ul>
               <input
-                type="email"
+                type="text"
                 placeholder="Enter email to share"
                 value={shareEmail}
                 onChange={(e) => setShareEmail(e.target.value)}
                 style={styles.shareInput}
               />
-              <button onClick={() => handleShare(selectedFile.id)} style={styles.shareButton}>Share</button>
+              <button onClick={() => handleShare(selectedFile.id, shareEmail)} style={styles.shareButton}>Share</button>
               <button onClick={() => handleDownload(selectedFile.id)}>Download</button>
               <button onClick={() => handleFileClick(selectedFile.id)}>View</button>
               <button onClick={() => handleDelete(selectedFile.id)} style={styles.deleteButton}>Delete</button>
+              <h3>Shared With:</h3>
+              <ul>
+                {selectedFile.sharedWithEmails.map((email) => (
+                  <li key={email}>
+                    {email} <button onClick={() => handleRevoke(selectedFile.id, email)} style={styles.revokeButton}>Revoke</button>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : (
             renderFileContent()
@@ -316,22 +333,6 @@ const styles = {
     maxWidth: '100%',
     maxHeight: '600px',
   },
-  shareInput: {
-    padding: '10px',
-    width: '200px',
-    borderRadius: '5px',
-    border: '1px solid #ccc',
-    margin: '10px 0',
-  },
-  shareButton: {
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    padding: '10px',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    marginBottom: '10px',
-  },
   deleteButton: {
     backgroundColor: 'red',
     color: 'white',
@@ -340,6 +341,31 @@ const styles = {
     borderRadius: '5px',
     cursor: 'pointer',
     marginTop: '10px',
+  },
+  shareButton: {
+    backgroundColor: 'blue',
+    color: 'white',
+    padding: '10px',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginTop: '10px',
+  },
+  shareInput: {
+    padding: '10px',
+    width: '200px',
+    borderRadius: '5px',
+    border: '1px solid #ccc',
+    marginBottom: '10px',
+  },
+  revokeButton: {
+    backgroundColor: 'orange',
+    color: 'white',
+    padding: '5px',
+    border: 'none',
+    borderRadius: '3px',
+    cursor: 'pointer',
+    marginLeft: '10px',
   },
 };
 
