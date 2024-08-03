@@ -59,7 +59,7 @@ const FilesDashboard = () => {
       };
       reader.readAsDataURL(response.data);
     } catch (error) {
-      setMessage('Failed to view file: ' + error.response.data.message);
+      setModalMessage('Failed to view file: ' + error.response.data.message);
     }
   };
 
@@ -90,7 +90,7 @@ const FilesDashboard = () => {
       setShowUploadModal(false);
       fetchFiles(); // Refresh files after upload
     } catch (error) {
-      setMessage('Upload failed: ' + error.response.data.message);
+      setModalMessage('Upload failed: ' + error.response.data.message);
     }
   };
 
@@ -105,7 +105,7 @@ const FilesDashboard = () => {
       setSelectedFile(response.data);
       setShowFileModal(true);
     } catch (error) {
-      setMessage('Failed to fetch file details: ' + error.response.data.message);
+      setModalMessage('Failed to fetch file details: ' + error.response.data.message);
     }
   };
 

@@ -20,8 +20,8 @@ const Modal = ({ children, onClose, blurBackground }) => {
   return (
     <>
       {blurBackground && <div className="modal-backdrop"></div>}
-      <div className="modal">
-        <div className="modal-content" ref={modalRef}>
+      <div className="modal" ref={modalRef}>
+        <div className="modal-content">
           <button className="close-button" onClick={onClose}>×</button>
           {children}
         </div>
