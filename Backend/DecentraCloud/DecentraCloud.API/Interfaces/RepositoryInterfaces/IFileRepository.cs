@@ -21,6 +21,7 @@ namespace DecentraCloud.API.Interfaces.RepositoryInterfaces
         Task<bool> DeleteFileFromNode(string userId, string fileId, Node node);
         Task<bool> UpdateFileRecord(FileRecord fileRecord);
         Task<bool> RevokeFileShare(string fileId, string userId);
+        Task<bool> RenameFile(string fileId, string newFilename);
 
 
     }

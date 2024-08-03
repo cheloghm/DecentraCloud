@@ -247,5 +247,17 @@ namespace DecentraCloud.API.Services
             return await _fileRepository.GetFileRecordById(fileId);
         }
 
+        public async Task<bool> RenameFile(string userId, string fileId, string newFilename)
+        {
+            var fileRecord = await _fileRepository.GetFileRecordById(fileId);
+
+            if (fileRecord == null || fileRecord.UserId != userId)
+            {
+                return false;
+            }
+
+            return await _fileRepository.RenameFile(fileId, newFilename);
+        }
+
     }
 }

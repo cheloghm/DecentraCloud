@@ -20,6 +20,7 @@ namespace DecentraCloud.API.Interfaces.ServiceInterfaces
         Task<bool> IsFileOwner(string userId, string fileId);
         Task<bool> RevokeShare(string fileId, string userEmail);
         Task<FileRecord> GetFileRecordById(string fileId);
+        Task<bool> RenameFile(string userId, string fileId, string newFilename);
 
     }
 }

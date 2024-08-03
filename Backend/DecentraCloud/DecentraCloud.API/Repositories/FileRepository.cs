@@ -173,5 +173,13 @@ namespace DecentraCloud.API.Repositories
             return result.ModifiedCount > 0;
         }
 
+        public async Task<bool> RenameFile(string fileId, string newFilename)
+        {
+            var filter = Builders<FileRecord>.Filter.Eq(f => f.Id, fileId);
+            var update = Builders<FileRecord>.Update.Set(f => f.Filename, newFilename);
+            var result = await _context.Files.UpdateOneAsync(filter, update);
+            return result.ModifiedCount > 0;
+        }
+
     }
 }

@@ -233,5 +233,24 @@ namespace DecentraCloud.API.Controllers
 
             return Ok(new { message = "File share revoked successfully." });
         }
+
+        [HttpPost("rename/{fileId}")]
+        public async Task<IActionResult> RenameFile(string fileId, [FromBody] RenameFileDto renameFileDto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found." });
+            }
+
+            var result = await _fileService.RenameFile(userId, fileId, renameFileDto.NewFilename);
+
+            if (!result)
+            {
+                return NotFound(new { message = "File not found or access denied." });
+            }
+
+            return Ok(new { message = "File renamed successfully." });
+        }
     }
 }
