@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 # Add the parent directory to the system path to find the utils module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.utils import check_storage  # Correctly import the storage check function
+from utils.utils import check_storage, create_and_secure_storage  # Import the storage check and allocation functions
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,7 +23,7 @@ def cli():
 @cli.command()
 @click.option('--email', prompt='Your email', help='The email to register the node.')
 @click.option('--password', prompt='Your password', hide_input=True, confirmation_prompt=True, help='The password to register the node.')
-@click.option('--storage', prompt='Storage space (in GB)', help='The amount of storage space to allocate.')
+@click.option('--storage', prompt='Storage space (in GB)', help='The amount of storage space to allocate.', default=5)
 @click.option('--nodename', prompt='Node name', help='The name of the node.')
 def register(email, password, storage, nodename):
     """Register the storage node with the central server."""
@@ -32,13 +32,17 @@ def register(email, password, storage, nodename):
         return
 
     try:
-        # Check for at least 40GB of available storage
-        free_storage = check_storage(40)
+        # Check for at least 10GB of available storage
+        free_storage = check_storage(10)
         click.echo(f"Free storage space: {free_storage}GB")
 
-        if int(storage) < 10:
-            click.echo("Storage allocation must be at least 10GB.")
+        if int(storage) < 5:
+            click.echo("Storage allocation must be at least 5GB.")
             return
+        
+        # Create and secure the specified storage space
+        create_and_secure_storage(int(storage))
+        click.echo(f"Allocated and secured {storage}GB of storage.")
     except Exception as e:
         click.echo(str(e))
         return
