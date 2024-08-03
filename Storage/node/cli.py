@@ -2,8 +2,14 @@ import click
 import requests
 import json
 import os
+import sys
+import psutil
 from dotenv import load_dotenv
-from subprocess import Popen, PIPE, TimeoutExpired
+
+# Add the parent directory to the system path to find the utils module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.utils import check_storage  # Correctly import the storage check function
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,6 +29,18 @@ def register(email, password, storage, nodename):
     """Register the storage node with the central server."""
     if BASE_URL is None:
         click.echo("BASE_URL environment variable is not set.")
+        return
+
+    try:
+        # Check for at least 40GB of available storage
+        free_storage = check_storage(40)
+        click.echo(f"Free storage space: {free_storage}GB")
+
+        if int(storage) < 10:
+            click.echo("Storage allocation must be at least 10GB.")
+            return
+    except Exception as e:
+        click.echo(str(e))
         return
 
     # Register node
@@ -52,11 +70,24 @@ def register(email, password, storage, nodename):
 @click.option('--nodename', prompt='Node name', help='The name of the node.')
 @click.option('--email', prompt='Your email', help='The email associated with the node.')
 @click.option('--password', prompt='Your password', hide_input=True, help='The password to authenticate the node.')
-@click.option('--port', prompt='Port number', default=3000, help='The port number where the node server is running.')
-def login(nodename, email, password, port):
+def login(nodename, email, password):
     """Authenticate the storage node with the central server."""
     if BASE_URL is None:
         click.echo("BASE_URL environment variable is not set.")
+        return
+
+    # Function to find the port where the node is running
+    def find_node_port():
+        for conn in psutil.net_connections(kind='inet'):
+            if conn.status == psutil.CONN_LISTEN and conn.laddr.port != 80:
+                p = psutil.Process(conn.pid)
+                if "node" in p.name().lower() and conn.laddr.ip == '0.0.0.0':
+                    return conn.laddr.port
+        return None
+
+    port = find_node_port()
+    if port is None:
+        click.echo("Could not find the running port for the node.")
         return
 
     endpoint = f"https://localhost:{port}"
