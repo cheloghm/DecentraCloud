@@ -15,8 +15,11 @@ const FilesDashboard = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [message, setMessage] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [shareEmail, setShareEmail] = useState('');
+  const [newFilename, setNewFilename] = useState('');
+  const [emailToShare, setEmailToShare] = useState('');
+  const [emailToRevoke, setEmailToRevoke] = useState('');
 
   useEffect(() => {
     fetchFiles();
@@ -124,7 +127,7 @@ const FilesDashboard = () => {
       link.click();
       link.remove();
     } catch (error) {
-      setMessage('Download failed: ' + error.response.data.message);
+      setModalMessage('Download failed: ' + error.response.data.message);
     }
   };
 
@@ -143,39 +146,7 @@ const FilesDashboard = () => {
       setShowFileModal(false);
       fetchFiles(); // Refresh files after deletion
     } catch (error) {
-      setMessage('Failed to delete file: ' + error.response.data.message);
-    }
-  };
-
-  const handleRevoke = async (fileId, userEmail) => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) return;
-
-    try {
-      const response = await axios.post(`${apiUrl}/file/revoke/${fileId}`, { userEmail }, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setMessage('File share revoked successfully');
-      // Refresh the file details
-      handleFileMenuClick(fileId);
-    } catch (error) {
-      setMessage('Failed to revoke file share: ' + error.response.data.message);
-    }
-  };
-
-  const handleShare = async (fileId, email) => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) return;
-
-    try {
-      const response = await axios.post(`${apiUrl}/file/share/${fileId}`, { email }, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setMessage('File shared successfully');
-      // Refresh the file details
-      handleFileMenuClick(fileId);
-    } catch (error) {
-      setMessage('Failed to share file: ' + error.response.data.message);
+      setModalMessage('Failed to delete file: ' + error.response.data.message);
     }
   };
 
@@ -196,6 +167,99 @@ const FilesDashboard = () => {
       } catch (error) {
         console.error('Failed to search files:', error);
       }
+    }
+  };
+
+  const handleRename = async (fileId) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    if (!newFilename) {
+      setModalMessage('Please provide a new filename.');
+      return;
+    }
+
+    const fileExtension = selectedFile.filename.split('.').pop();
+    const filenameWithExtension = `${newFilename}.${fileExtension}`;
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/file/rename/${fileId}`,
+        { newFilename: filenameWithExtension },
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
+      setMessage(response.data.message);
+      setModalMessage(response.data.message);
+      setNewFilename(''); // Clear input box after renaming
+      fetchFiles(); // Refresh files after renaming
+      // Update selected file details
+      setSelectedFile({ ...selectedFile, filename: filenameWithExtension });
+    } catch (error) {
+      setModalMessage('Failed to rename file: ' + error.response.data.message);
+    }
+  };
+
+  const handleShare = async (fileId) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    if (!emailToShare) {
+      setModalMessage('Please provide an email to share the file with.');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/file/share/${fileId}`,
+        { email: emailToShare },
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
+      setMessage(response.data.message);
+      setModalMessage(response.data.message);
+      setEmailToShare(''); // Clear input box after sharing
+      // Update sharedWithEmails
+      setSelectedFile({
+        ...selectedFile,
+        sharedWithEmails: [...selectedFile.sharedWithEmails, emailToShare],
+      });
+      fetchFiles(); // Refresh files after sharing
+    } catch (error) {
+      setModalMessage('Failed to share file: ' + error.response.data.message);
+    }
+  };
+
+  const handleRevokeShare = async (fileId) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    if (!emailToRevoke) {
+      setModalMessage('Please provide an email to revoke the file share.');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/file/revoke/${fileId}`,
+        { userEmail: emailToRevoke },
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
+      setMessage(response.data.message);
+      setModalMessage(response.data.message);
+      setEmailToRevoke(''); // Clear input box after revoking share
+      // Update sharedWithEmails
+      setSelectedFile({
+        ...selectedFile,
+        sharedWithEmails: selectedFile.sharedWithEmails.filter(email => email !== emailToRevoke),
+      });
+      fetchFiles(); // Refresh files after revoking share
+    } catch (error) {
+      setModalMessage('Failed to revoke share: ' + error.response.data.message);
     }
   };
 
@@ -257,28 +321,44 @@ const FilesDashboard = () => {
           {selectedFile ? (
             <div>
               <h2>File Details</h2>
-              <p><strong>Filename:</strong> {selectedFile.filename.length > 20 ? `${selectedFile.filename.substring(0, 20)}...` : selectedFile.filename}</p>
+              <p><strong>Filename:</strong> {selectedFile.filename}</p>
               <p><strong>Size:</strong> {selectedFile.size} bytes</p>
               <p><strong>Added:</strong> {getTimeDifference(selectedFile.dateAdded)}</p>
-              <input
-                type="text"
-                placeholder="Enter email to share"
-                value={shareEmail}
-                onChange={(e) => setShareEmail(e.target.value)}
-                style={styles.shareInput}
-              />
-              <button onClick={() => handleShare(selectedFile.id, shareEmail)} style={styles.shareButton}>Share</button>
+              <p><strong>Shared with:</strong> {selectedFile.sharedWithEmails.join(', ')}</p>
               <button onClick={() => handleDownload(selectedFile.id)}>Download</button>
               <button onClick={() => handleFileClick(selectedFile.id)}>View</button>
               <button onClick={() => handleDelete(selectedFile.id)} style={styles.deleteButton}>Delete</button>
-              <h3>Shared With:</h3>
-              <ul>
-                {selectedFile.sharedWithEmails.map((email) => (
-                  <li key={email}>
-                    {email} <button onClick={() => handleRevoke(selectedFile.id, email)} style={styles.revokeButton}>Revoke</button>
-                  </li>
-                ))}
-              </ul>
+              <div>
+                <input
+                  type="text"
+                  placeholder="New filename"
+                  value={newFilename}
+                  onChange={(e) => setNewFilename(e.target.value)}
+                  style={styles.renameInput}
+                />
+                <button onClick={() => handleRename(selectedFile.id)}>Rename</button>
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Email to share"
+                  value={emailToShare}
+                  onChange={(e) => setEmailToShare(e.target.value)}
+                  style={styles.shareInput}
+                />
+                <button onClick={() => handleShare(selectedFile.id)}>Share</button>
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Email to revoke"
+                  value={emailToRevoke}
+                  onChange={(e) => setEmailToRevoke(e.target.value)}
+                  style={styles.shareInput}
+                />
+                <button onClick={() => handleRevokeShare(selectedFile.id)}>Revoke Share</button>
+              </div>
+              {modalMessage && <p style={styles.modalMessage}>{modalMessage}</p>}
             </div>
           ) : (
             renderFileContent()
@@ -342,30 +422,23 @@ const styles = {
     cursor: 'pointer',
     marginTop: '10px',
   },
-  shareButton: {
-    backgroundColor: 'blue',
-    color: 'white',
+  renameInput: {
     padding: '10px',
-    border: 'none',
+    width: '100%',
     borderRadius: '5px',
-    cursor: 'pointer',
+    border: '1px solid #ccc',
     marginTop: '10px',
   },
   shareInput: {
     padding: '10px',
-    width: '200px',
+    width: '100%',
     borderRadius: '5px',
     border: '1px solid #ccc',
-    marginBottom: '10px',
+    marginTop: '10px',
   },
-  revokeButton: {
-    backgroundColor: 'orange',
-    color: 'white',
-    padding: '5px',
-    border: 'none',
-    borderRadius: '3px',
-    cursor: 'pointer',
-    marginLeft: '10px',
+  modalMessage: {
+    color: 'red',
+    marginTop: '10px',
   },
 };
 
