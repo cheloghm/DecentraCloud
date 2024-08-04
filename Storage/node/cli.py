@@ -3,7 +3,7 @@ import requests
 import json
 import os
 import sys
-import psutil
+import subprocess  # Import subprocess to run shell scripts
 from dotenv import load_dotenv
 
 # Add the parent directory to the system path to find the utils module
@@ -43,6 +43,16 @@ def register(email, password, storage, nodename):
         # Create and secure the specified storage space
         create_and_secure_storage(int(storage))
         click.echo(f"Allocated and secured {storage}GB of storage.")
+        
+        # Run the Kubernetes and container runtime installation script
+        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../scripts/install_k8s_components.sh')
+        subprocess.run(['bash', script_path], check=True)
+        click.echo("Kubernetes components and container runtime installed.")
+        
+        # Initialize and configure the Kubernetes cluster
+        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../scripts/init_k8s_cluster.sh')
+        subprocess.run(['bash', script_path], check=True)
+        click.echo("Kubernetes cluster initialized and configured.")
     except Exception as e:
         click.echo(str(e))
         return
@@ -69,6 +79,17 @@ def register(email, password, storage, nodename):
             click.echo(f"Failed to register node. Status code: {register_response.status_code}. Response: {register_response.text}")
     except Exception as e:
         click.echo(f"An error occurred: {str(e)}")
+
+@cli.command()
+@click.argument('action', type=click.Choice(['start', 'stop', 'scale', 'rbac', 'netpol'], case_sensitive=False))
+def manage(action):
+    """Manage Kubernetes cluster operations."""
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../scripts/manage_k8s_cluster.sh')
+    try:
+        subprocess.run(['bash', script_path, action], check=True)
+        click.echo(f"Kubernetes cluster action '{action}' executed successfully.")
+    except subprocess.CalledProcessError as e:
+        click.echo(f"Failed to execute action '{action}': {e}")
 
 @cli.command()
 @click.option('--nodename', prompt='Node name', help='The name of the node.')
@@ -111,7 +132,7 @@ def login(nodename, email, password):
     try:
         login_response = requests.post(f"{BASE_URL}/Nodes/login", json=login_data, headers=headers, verify=False)
 
-        if login_response.status_code == 200:
+        if login_response.status_code == 200):
             click.echo("Node authenticated successfully!")
             node_config = login_response.json()
             with open('node_config.json', 'w') as f:
